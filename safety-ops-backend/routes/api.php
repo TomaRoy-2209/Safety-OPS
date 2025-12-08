@@ -17,5 +17,5 @@ Route::prefix('auth')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
     });
 });
-
+Route::post('/incidents', [App\Http\Controllers\API\IncidentController::class, 'store']);
 Route::post('/incidents/{id}/upload', [IncidentController::class, 'uploadEvidence']);
