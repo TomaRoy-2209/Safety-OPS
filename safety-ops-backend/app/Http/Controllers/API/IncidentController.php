@@ -67,4 +67,17 @@ class IncidentController extends Controller
             'url' => $url
         ], 201);
     }
+    // Fetch reports for User ID 1
+public function index()
+{
+    $incidents = \App\Models\Incident::where('user_id', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $incidents
+    ], 200);
+}
+
 }
