@@ -19,3 +19,4 @@ Route::prefix('auth')->group(function () {
 });
 Route::post('/incidents', [App\Http\Controllers\API\IncidentController::class, 'store']);
 Route::post('/incidents/{id}/upload', [IncidentController::class, 'uploadEvidence']);
+Route::get('/my-reports', [App\Http\Controllers\API\IncidentController::class, 'index']);

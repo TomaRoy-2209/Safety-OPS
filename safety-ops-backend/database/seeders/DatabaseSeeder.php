@@ -1,10 +1,9 @@
 <?php
 
 namespace Database\Seeders;
-use App\Models\User;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,19 +13,19 @@ class DatabaseSeeder extends Seeder
      * @return void
      */
     public function run()
-
     {
+        // Create User with ID 1
         User::create([
-        'id' => 1,
-        'name' => 'Test User',
-        'email' => 'testuser@example.com',
-        'password' => bcrypt('password'),
-    ]);
-        // \App\Models\User::factory(10)->create();
+            'id' => 1,
+            'name' => 'Test User',
+            'email' => 'testuser@example.com',
+            'password' => bcrypt('password'),
+        ]);
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Run your Incidents Seeder
+        $this->call([
+            IncidentSeeder::class,
+        ]);
     }
 }
+
