@@ -79,5 +79,16 @@ public function index()
         'data' => $incidents
     ], 200);
 }
+ public function assign(Request $request, $id)
+    {
+        $incident = \App\Models\Incident::find($id);
+        if (!$incident) return response()->json(['message' => 'Not found'], 404);
+
+        $incident->assigned_agency = $request->agency;
+        $incident->status = 'dispatched';
+        $incident->save();
+
+        return response()->json(['message' => 'Assigned!'], 200);
+    }
 
 }
