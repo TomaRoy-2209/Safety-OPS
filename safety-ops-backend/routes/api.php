@@ -29,3 +29,4 @@ Route::get('/my-reports', [IncidentController::class, 'index']);
 
 // 4. [Toma] Assign Incident
 Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
+Route::get('/incidents/all', [App\Http\Controllers\API\IncidentController::class, 'getAll']);

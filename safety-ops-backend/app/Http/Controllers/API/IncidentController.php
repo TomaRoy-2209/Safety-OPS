@@ -94,4 +94,18 @@ class IncidentController extends Controller
 
         return response()->json(['message' => 'Assigned!'], 200);
     }
+       // Fetch ALL incidents for the public map
+    public function getAll()
+    {
+        // Get only necessary fields to make it fast
+        $incidents = \App\Models\Incident::select('id', 'title', 'latitude', 'longitude', 'status')
+                        ->whereNotNull('latitude') // Only map-able items
+                        ->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $incidents
+        ], 200);
+    }
+
 }
