@@ -12,7 +12,7 @@ export default function ResponderDashboard() {
       window.location.href = "/login";
       return;
     }
-    fetch("http://localhost:8000/api/auth/profile", {
+    fetch("http://localhost:1801/api/auth/profile", {
       headers: { "Authorization": `Bearer ${token}` }
     })
       .then(res => res.json())
