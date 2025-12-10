@@ -9,7 +9,7 @@ export default function DispatchPage() {
 
     // Fetch only PENDING incidents
     useEffect(() => {
-        axios.get('http://localhost:1429/api/my-reports') // adjust to your real admin route
+        axios.get('http://localhost:1801/api/my-reports') // adjust to your real admin route
             .then(res => {
                 // Filter locally for demo
                 const pending = res.data.data.filter(i => i.status === 'pending');
@@ -24,7 +24,7 @@ export default function DispatchPage() {
         if (!selectedAgency) return alert("Select an agency first!");
 
         try {
-            await axios.post(`http://localhost:1429/api/incidents/${id}/assign`, {
+            await axios.post(`http://localhost:1801/api/incidents/${id}/assign`, {
                 agency: selectedAgency
             });
             alert("Unit Dispatched!");

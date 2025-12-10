@@ -9,7 +9,7 @@ export default function MyReportsPage() {
 
     useEffect(() => {
         // Fetch data from your backend
-        axios.get('http://127.0.0.1:1429/api/my-reports')
+        axios.get('http://127.0.0.1:1801/api/my-reports')
             .then(res => {
                 setReports(res.data.data);
                 setLoading(false);
