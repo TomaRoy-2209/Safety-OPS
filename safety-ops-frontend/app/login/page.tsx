@@ -9,6 +9,7 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    // Resolved to use your port (1801)
     const res = await fetch("http://localhost:1801/api/auth/login", {
       method: "POST",
       headers: {

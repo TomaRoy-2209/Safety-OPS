@@ -15,6 +15,7 @@ export default function ReportPage() {
     // 2. NEW STATE: To store the ID of the report we just made
     const [createdIncidentId, setCreatedIncidentId] = useState(null);
 
+    // Auto-Get Location
     useEffect(() => {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -32,17 +33,18 @@ export default function ReportPage() {
         setLoading(true);
         try {
             // 3. SEND REPORT
-            // Ensure this matches your backend port (1801 or 8000)
+            // NOTE: Check your terminal. If your backend is on port 8000, change 1801 to 8000.
             const res = await axios.post('http://127.0.0.1:1801/api/incidents', form);
             
-            // 4. CAPTURE THE ID
+            // 4. CAPTURE THE ID FROM BACKEND RESPONSE
             const newId = res.data.incident.id; 
             setCreatedIncidentId(newId);
             
             alert("Report Logged! Please attach evidence now.");
+            // We DO NOT redirect yet. We stay here to upload files.
         } catch (error) {
             console.error(error);
-            alert("Transmission Failed.");
+            alert("Transmission Failed. Check console for details.");
         } finally {
             setLoading(false);
         }
@@ -52,7 +54,7 @@ export default function ReportPage() {
         <DashboardLayout title="New Incident Report">
             <div className="max-w-2xl mx-auto">
                 
-                {/* 5. CONDITIONAL VIEW: Show Upload Screen AFTER Submit */}
+                {/* 5. CONDITIONAL RENDERING: Show Upload Screen AFTER Submit */}
                 
                 {createdIncidentId ? (
                     // --- VIEW 2: EVIDENCE UPLOAD (YOUR FEATURE) ---
@@ -63,7 +65,7 @@ export default function ReportPage() {
                             <p className="text-cyber-muted mt-2">Attach photos or videos to complete the dossier.</p>
                         </div>
 
-                        {/* YOUR COMPONENT */}
+                        {/* YOUR COMPONENT (Connected to the real ID!) */}
                         <EvidenceUpload incidentId={createdIncidentId} />
 
                         <button 
@@ -78,32 +80,36 @@ export default function ReportPage() {
                     // --- VIEW 1: REPORT FORM (SABRINA'S FEATURE) ---
                     <div className="bg-cyber-panel border border-cyber-border p-8 rounded-xl shadow-2xl">
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Title Input */}
                             <div>
                                 <label className="block text-xs font-bold text-cyber-primary uppercase mb-2">Subject</label>
                                 <input 
                                     type="text" 
-                                    className="w-full bg-cyber-black border border-cyber-border rounded-lg p-3 text-white focus:border-cyber-primary outline-none"
+                                    className="w-full bg-cyber-black border border-cyber-border rounded-lg p-3 text-white focus:border-cyber-primary outline-none transition-all"
                                     placeholder="e.g. Fire at Sector 7"
                                     onChange={e => setForm({...form, title: e.target.value})}
                                     required
                                 />
                             </div>
 
+                            {/* Description Input */}
                             <div>
                                 <label className="block text-xs font-bold text-cyber-primary uppercase mb-2">Details</label>
                                 <textarea 
                                     rows="4"
-                                    className="w-full bg-cyber-black border border-cyber-border rounded-lg p-3 text-white focus:border-cyber-primary outline-none"
+                                    className="w-full bg-cyber-black border border-cyber-border rounded-lg p-3 text-white focus:border-cyber-primary outline-none transition-all"
                                     placeholder="Describe the situation..."
                                     onChange={e => setForm({...form, description: e.target.value})}
                                     required
                                 ></textarea>
                             </div>
 
+                            {/* GPS Status */}
                             <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-blue-400 text-xs font-mono">
                                 {gps}
                             </div>
 
+                            {/* Submit Button */}
                             <button 
                                 disabled={loading}
                                 className="w-full bg-cyber-primary hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-all"

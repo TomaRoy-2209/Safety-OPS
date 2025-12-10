@@ -14,6 +14,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    // Resolved to use your port (1801)
     const res = await fetch("http://localhost:1801/api/auth/register", {
       method: "POST",
       headers: {

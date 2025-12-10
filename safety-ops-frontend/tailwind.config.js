@@ -4,15 +4,14 @@ module.exports = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    // Add this line just in case you aren't using 'src'
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}", // For projects without src
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
         cyber: {
-          black: '#020617', // The dark background you are missing
+          black: '#020617',
           panel: '#0f172a',
           border: '#1e293b',
           text: '#f1f5f9',

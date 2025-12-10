@@ -4,13 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\IncidentController;
 
+// --- Auth Routes (Toma) ---
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
-    Route::middleware('auth:api')->post('refresh', [AuthController::class, 'refresh']);
-
-
-
+    
     Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
@@ -18,5 +16,16 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// --- Module 1 & 2 Feature Routes ---
+
+// 1. [Sabrina] Report Incident
+Route::post('/incidents', [IncidentController::class, 'store']);
+
+// 2. [Ifrad] Upload Evidence
 Route::post('/incidents/{id}/upload', [IncidentController::class, 'uploadEvidence']);
+
+// 3. [Tarin] My Reports Dashboard
 Route::get('/my-reports', [IncidentController::class, 'index']);
+
+// 4. [Toma] Assign Incident
+Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);

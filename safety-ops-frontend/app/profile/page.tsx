@@ -11,6 +11,7 @@ export default function ProfilePage() {
       window.location.href = "/login"; // redirect instantly
       return;
     }
+    // Resolved to use your port (1801)
     fetch("http://localhost:1801/api/auth/profile", {
       headers: { "Authorization": `Bearer ${token}` }
     })

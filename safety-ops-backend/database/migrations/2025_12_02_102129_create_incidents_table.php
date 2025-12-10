@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('incidents', function (Blueprint $table) {
             $table->id();
-            // We added these lines:
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('status')->default('pending'); // pending, resolved
-            $table->decimal('latitude', 10, 8)->nullable(); 
+            $table->text('description');
+            $table->string('status')->default('pending'); // pending, dispatched, resolved
+            $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
