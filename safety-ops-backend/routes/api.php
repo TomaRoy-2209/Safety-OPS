@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\IncidentController;
+use App\Http\Controllers\API\AdminController;
 
 // --- Auth Routes (Toma) ---
 Route::prefix('auth')->group(function () {
@@ -29,3 +30,7 @@ Route::get('/my-reports', [IncidentController::class, 'index']);
 
 // 4. [Toma] Assign Incident
 Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
+
+// --- Sabrina's Admin Features ---
+Route::get('/admin/users', [AdminController::class, 'index']);
+Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
