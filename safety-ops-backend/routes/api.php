@@ -27,5 +27,5 @@ Route::post('/incidents/{id}/upload', [IncidentController::class, 'uploadEvidenc
 // 3. [Tarin] My Reports Dashboard
 Route::get('/my-reports', [IncidentController::class, 'index']);
 
-// 4. [Toma] Assign Incident (THIS WAS MISSING)
+// 4. [Toma] Assign Incident
 Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
