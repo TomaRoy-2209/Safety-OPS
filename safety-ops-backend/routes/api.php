@@ -31,6 +31,9 @@ Route::get('/my-reports', [IncidentController::class, 'index']);
 // 4. [Toma] Assign Incident
 Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
 
-// --- Sabrina's Admin Features ---
+// 5. [Tarin] Map Visualization (Get All Incidents)
+Route::get('/incidents/all', [IncidentController::class, 'getAll']);
+
+// 6. [Sabrina] Admin Access Control
 Route::get('/admin/users', [AdminController::class, 'index']);
 Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
