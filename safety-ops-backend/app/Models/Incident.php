@@ -9,15 +9,11 @@ class Incident extends Model
 {
     use HasFactory;
 
-    // This part is MISSING in your code right now.
-    // It tells Laravel: "It is safe to save these fields."
-    protected $fillable = [
-        'title',
-        'description',
-        'latitude',
-        'longitude',
-        'status',
-        'user_id',
-        'assigned_agency',
-    ];
+    protected $guarded = [];
+
+    // --- ADD THIS FUNCTION ---
+    public function evidence()
+    {
+        return $this->hasMany(IncidentMedia::class);
+    }
 }

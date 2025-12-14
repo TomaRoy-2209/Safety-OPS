@@ -10,10 +10,9 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class IncidentController extends Controller
 {
-    // --- SABRINA'S FEATURE: Create Incident ---
+// --- SABRINA'S FEATURE: Create Incident ---
     public function store(Request $request)
     {
-        // 1. Validate Input
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -21,14 +20,14 @@ class IncidentController extends Controller
             'longitude' => 'required|numeric',
         ]);
 
-        // 2. Create Incident in Database
         $incident = Incident::create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'status' => 'pending',
-            'user_id' => 1, // Hardcoded for Demo (or auth()->id())
+            // FIX: Use the actual logged-in user's ID
+            'user_id' => auth()->id(), 
         ]);
 
         return response()->json([
@@ -40,27 +39,25 @@ class IncidentController extends Controller
     // --- IFRAD'S FEATURE: Upload Evidence ---
     public function uploadEvidence(Request $request, $incident_id)
     {
-        // 1. Validate File
         $request->validate([
             'evidence' => 'required|file|mimes:jpg,jpeg,png,mp4|max:40960'
         ]);
 
-        // 2. Find Incident
         $incident = Incident::find($incident_id);
         if (!$incident) {
             return response()->json(['message' => 'Incident not found'], 404);
         }
 
-        // 3. Upload to Cloudinary
         $uploadedFile = $request->file('evidence')->storeOnCloudinary('incidents');
         $url = $uploadedFile->getSecurePath();
         $fileType = $request->file('evidence')->getClientMimeType();
+        // Simplify mime type for frontend (image/jpeg -> image)
+        $simpleFileType = str_starts_with($fileType, 'video') ? 'video' : 'image';
 
-        // 4. Save Link to Database
         $media = new IncidentMedia();
         $media->incident_id = $incident->id;
-        $media->file_path = $url;
-        $media->file_type = $fileType;
+        $media->file_path = $url; // The Cloudinary URL
+        $media->file_type = $simpleFileType; 
         $media->save();
 
         return response()->json([
@@ -69,10 +66,23 @@ class IncidentController extends Controller
         ], 201);
     }
 
-    // --- TARIN'S FEATURE: Fetch Reports ---
+    // --- RESPONDER DASHBOARD FEED (FETCH ALL + EVIDENCE) ---
     public function index()
     {
-        $incidents = Incident::where('user_id', 1)
+        // with('evidence') tells Laravel to attach the photos/videos to the JSON
+        $incidents = Incident::with('evidence')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+        
+        return response()->json($incidents, 200);
+    }
+
+// --- TARIN'S FEATURE: Citizen "My Reports" ---
+    public function myReports()
+    {
+        // FIX: Only fetch reports where user_id matches the authenticated user
+        $incidents = Incident::where('user_id', auth()->id()) 
+                        ->with('evidence') 
                         ->orderBy('created_at', 'desc')
                         ->get();
         
@@ -81,7 +91,7 @@ class IncidentController extends Controller
             'data' => $incidents
         ], 200);
     }
-    
+
     // --- TOMA'S FEATURE: Assign Incident ---
     public function assign(Request $request, $id)
     {
@@ -94,12 +104,12 @@ class IncidentController extends Controller
 
         return response()->json(['message' => 'Assigned!'], 200);
     }
-       // Fetch ALL incidents for the public map
+
+    // --- PUBLIC MAP DATA (Lightweight) ---
     public function getAll()
     {
-        // Get only necessary fields to make it fast
-        $incidents = \App\Models\Incident::select('id', 'title', 'latitude', 'longitude', 'status')
-                        ->whereNotNull('latitude') // Only map-able items
+        $incidents = Incident::select('id', 'title', 'latitude', 'longitude', 'status')
+                        ->whereNotNull('latitude')
                         ->get();
         
         return response()->json([
@@ -107,5 +117,4 @@ class IncidentController extends Controller
             'data' => $incidents
         ], 200);
     }
-
 }
