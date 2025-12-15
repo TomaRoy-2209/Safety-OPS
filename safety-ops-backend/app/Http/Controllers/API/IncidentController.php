@@ -67,14 +67,30 @@ class IncidentController extends Controller
     }
 
     // --- RESPONDER DASHBOARD FEED (FETCH ALL + EVIDENCE) ---
+    // --- RESPONDER / WORKER DASHBOARD FEED ---
+    // --- RESPONDER / WORKER DASHBOARD FEED ---
     public function index()
     {
-        // with('evidence') tells Laravel to attach the photos/videos to the JSON
-        $incidents = Incident::with('evidence')
+        $user = auth()->user();
+
+        // 1. ADMIN & RESPONDER (Dispatcher): See EVERYTHING
+        // They need to see all reports to decide who to dispatch.
+        if ($user->role === 'admin' || $user->role === 'responder') {
+            return Incident::with('evidence')
                         ->orderBy('created_at', 'desc')
                         ->get();
-        
-        return response()->json($incidents, 200);
+        }
+
+        // 2. WORKER (Specialized Unit): See ONLY ASSIGNED
+        // Strict filter. They only see what is specifically given to them.
+        if ($user->role === 'worker') {
+            return Incident::with('evidence')
+                        ->where('assigned_agency', $user->unit) // Match Unit Name
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+        }
+
+        return response()->json([], 403);
     }
 
 // --- TARIN'S FEATURE: Citizen "My Reports" ---
@@ -93,16 +109,21 @@ class IncidentController extends Controller
     }
 
     // --- TOMA'S FEATURE: Assign Incident ---
+    // Assign Unit (Now allowed for Responders too)
+    // In IncidentController.php
     public function assign(Request $request, $id)
     {
+        // Allow BOTH Admin and Responder(Dispatcher)
+        if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'responder') {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        
         $incident = Incident::find($id);
-        if (!$incident) return response()->json(['message' => 'Not found'], 404);
-
-        $incident->assigned_agency = $request->agency;
+        $incident->assigned_agency = $request->agency; 
         $incident->status = 'dispatched';
         $incident->save();
 
-        return response()->json(['message' => 'Assigned!'], 200);
+        return response()->json(['message' => 'Unit Dispatched'], 200);
     }
 
     // --- PUBLIC MAP DATA (Lightweight) ---

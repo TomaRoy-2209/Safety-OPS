@@ -3,7 +3,7 @@
 return [
 
     'defaults' => [
-        'guard' => 'web',
+        'guard' => 'api',      // <--- CHANGE THIS (was likely 'web')
         'passwords' => 'users',
     ],
 
@@ -12,8 +12,9 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
         'api' => [
-            'driver' => 'jwt',
+            'driver' => 'jwt',     // <--- MUST SAY 'jwt'
             'provider' => 'users',
         ],
     ],

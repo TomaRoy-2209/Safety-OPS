@@ -2,29 +2,33 @@
 
 namespace App\Models;
 
-use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Tymon\JWTAuth\Contracts\JWTSubject; // <--- IMPORTANT IMPORT
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject // <--- IMPORTANT IMPLEMENTS
 {
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
+     *
      * @var array<int, string>
      */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role'
+        'role',
+        'agency', // Ensure these are here
+        'unit',   // Ensure these are here
     ];
 
     /**
      * The attributes that should be hidden for serialization.
+     *
      * @var array<int, string>
      */
     protected $hidden = [
@@ -34,18 +38,31 @@ class User extends Authenticatable implements JWTSubject
 
     /**
      * The attributes that should be cast.
+     *
      * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        // 'password' => 'hashed', <--- Delete or comment out this line
     ];
 
-    // JWTSubject methods for JWT authentication
+    // --- REQUIRED JWT METHODS ---
+
+    /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
 
+    /**
+     * Return a key value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array
+     */
     public function getJWTCustomClaims()
     {
         return [];

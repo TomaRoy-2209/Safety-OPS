@@ -122,12 +122,24 @@ export default function DispatchPage() {
                                         className="bg-[#0a0a0a] text-white border border-gray-700 text-sm rounded p-2 focus:border-blue-500 outline-none"
                                         onChange={(e) => handleAgencyChange(incident.id, e.target.value)}
                                         defaultValue=""
-                                    >
+>
                                         <option value="" disabled>Select Unit...</option>
-                                        <option value="Police Unit 1">Police - Alpha Team</option>
-                                        <option value="Police Unit 2">Police - Bravo Team</option>
-                                        <option value="Fire Station 5">Fire Dept - Station 5</option>
-                                        <option value="Medical Team A">Medical - Rapid Response</option>
+                                        
+                                        <optgroup label="Police Dept">
+                                            <option value="Alpha Team">Alpha Team</option>
+                                            <option value="Bravo Team">Bravo Team</option>
+                                            <option value="Special Ops">Special Ops</option>
+                                        </optgroup>
+                                        
+                                        <optgroup label="Fire Service">
+                                            <option value="Station 5">Station 5</option>
+                                            <option value="Station 9">Station 9</option>
+                                        </optgroup>
+
+                                        <optgroup label="Medical">
+                                            <option value="Rapid Response A">Rapid Response A</option>
+                                            <option value="ICU Team B">ICU Team B</option>
+                                        </optgroup>
                                     </select>
                                 </div>
 

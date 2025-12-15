@@ -5,37 +5,49 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
-    // 1. Get List of All Users
+    // Fetch all users (Existing)
     public function index()
     {
-        $users = User::all(); // In a real app, you would paginate this
-        return response()->json($users);
+        return response()->json(User::orderBy('created_at', 'desc')->get());
     }
 
-    // 2. Change a User's Role
-    public function updateRole(Request $request, $id)
+    // --- SABRINA'S FEATURE: Create Agency User ---
+    public function createUser(Request $request)
     {
-        $user = User::find($id);
-        
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        // Validate the input
-        $request->validate([
-            'role' => 'required|string|in:citizen,admin,responder,police,fire'
+        // 1. Validate
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6',
+            'agency' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'role' => 'required|in:admin,responder,citizen,worker', 
         ]);
 
-        // Update the role
+        // 2. Create User (Explicitly mapping fields)
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'role' => $validated['role'],
+            // Use the null coalescing operator ?? to ensure it's not undefined
+            'agency' => $validated['agency'] ?? null,
+            'unit' => $validated['unit'] ?? null,
+        ]);
+
+        return response()->json(['message' => 'User Created', 'user' => $user], 201);
+    }
+    
+    // Update Role (Existing)
+    public function updateRole(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
         $user->role = $request->role;
         $user->save();
-
-        return response()->json([
-            'message' => 'User role updated successfully',
-            'user' => $user
-        ], 200);
+        return response()->json(['message' => 'Role updated']);
     }
 }

@@ -28,24 +28,26 @@ export default function DashboardLayout({ children, title }) {
     // Helper to get the correct "Home" link based on role
     const getHomeLink = () => {
         if (role === 'admin') return '/admin-dashboard';
-        if (role === 'responder') return '/responder-dashboard';
-        return '/dashboard'; // citizen
+        if (role === 'responder') return '/responder-dashboard'; // Dispatcher Dashboard
+        if (role === 'worker') return '/worker-dashboard';       // New Silent Dashboard
+        return '/dashboard'; // Citizen
     };
 
     const navItems = [
         // --- 1. HOME LINK (NEW) ---
-        { label: 'Overview', href: getHomeLink(), icon: '🏠', roles: ['citizen', 'responder', 'admin'] },
+        { label: 'Overview', href: getHomeLink(), icon: '🏠', roles: ['citizen', 'responder', 'admin', 'worker'] },
 
         // --- CITIZEN ---
         { label: 'New Report', href: '/report', icon: '🚨', roles: ['citizen', 'responder', 'admin'] },
 
         // --- COMMAND CENTER ---
+        { label: 'Dispatch Control', href: '/dispatch', icon: '🚓', roles: ['admin', 'responder'] },
         { label: 'Live Intel Feed', href: '/live-feed', icon: '📡', roles: ['admin', 'responder'] },
         { label: 'Tactical Map', href: '/map', icon: '🗺️', roles: ['admin', 'responder'] },
 
         // --- ADMIN ONLY ---
-        { label: 'Dispatch Control', href: '/dispatch', icon: '🚓', roles: ['admin'] },
         { label: 'User Database', href: '/admin/users', icon: '👥', roles: ['admin'] },
+        { label: 'Access Control', href: '/admin/access-control', icon: '🔑', roles: ['admin'] },
     ];
 
     if (!role) return null;

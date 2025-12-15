@@ -47,5 +47,6 @@ Route::middleware('auth:api')->group(function () {
     // User Management
     Route::get('/admin/users', [AdminController::class, 'index']);
     Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
-
+    // Inside middleware('auth:api') group:
+    Route::post('/admin/users', [AdminController::class, 'createUser']);
 });

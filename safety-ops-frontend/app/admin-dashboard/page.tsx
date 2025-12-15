@@ -8,34 +8,41 @@ import IntelViewer from "../components/IntelViewer";
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  // Default stats to avoid "undefined" errors
   const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, resolved: 0 });
   const [recentIncidents, setRecentIncidents] = useState([]);
-  const [selectedIncident, setSelectedIncident] = useState(null); // <--- For Modal
+  const [selectedIncident, setSelectedIncident] = useState(null); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Get Token
     const token = localStorage.getItem("jwt");
     const role = localStorage.getItem("role");
 
-    // 1. Auth Check
+    // 2. Immediate Security Check
     if (!token || role !== "admin") {
+      console.log("Unauthorized access attempt. Redirecting...");
       router.push("/login");
       return;
     }
 
-    // 2. Fetch Profile & Incidents in Parallel
     const fetchData = async () => {
         try {
-            const [profileRes, incidentsRes] = await Promise.all([
-                axios.get("http://localhost:1801/api/auth/profile", { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get("http://localhost:1801/api/incidents", { headers: { Authorization: `Bearer ${token}` } })
-            ]);
+            // 3. Request Config with Explicit Headers
+            const config = {
+                headers: { Authorization: `Bearer ${token}` }
+            };
 
-            setUser(profileRes.data.user || profileRes.data);
+            // 4. Fetch Data (Sequential is safer for debugging than Promise.all if one fails)
+            const profileReq = await axios.get("http://localhost:1801/api/auth/profile", config);
+            const incidentsReq = await axios.get("http://localhost:1801/api/incidents", config);
 
-            const allIncidents = Array.isArray(incidentsRes.data) ? incidentsRes.data : incidentsRes.data.data;
+            // 5. Process User
+            setUser(profileReq.data.user || profileReq.data);
+
+            // 6. Process Incidents
+            const allIncidents = Array.isArray(incidentsReq.data) ? incidentsReq.data : incidentsReq.data.data;
             
-            // Calculate Stats
             setStats({
                 total: allIncidents.length,
                 pending: allIncidents.filter(i => i.status === 'pending').length,
@@ -43,12 +50,19 @@ export default function AdminDashboard() {
                 resolved: allIncidents.filter(i => i.status === 'resolved').length,
             });
 
-            // Get Top 4 Recent
             setRecentIncidents(allIncidents.slice(0, 4));
             setLoading(false);
 
         } catch (error) {
-            console.error("Dashboard Data Error:", error);
+            console.error("Dashboard Load Error:", error);
+            
+            // --- CRITICAL FIX: Force Logout on 401 ---
+            if (error.response && error.response.status === 401) {
+                alert("Session Expired. Please login again.");
+                localStorage.removeItem('jwt');
+                localStorage.removeItem('role');
+                window.location.href = '/login'; // Hard reload is safer than router.push here
+            }
             setLoading(false);
         }
     };
@@ -65,7 +79,6 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout title="COMMAND OVERVIEW">
       
-      {/* 1. THE INTEL VIEWER MODAL */}
       {selectedIncident && (
         <IntelViewer 
             incident={selectedIncident} 
@@ -75,31 +88,27 @@ export default function AdminDashboard() {
 
       <div className="space-y-8">
         
-        {/* === STATS ROW === */}
+        {/* STATS ROW */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Total */}
             <div className="bg-[#0a0a0a] border border-gray-800 p-4 rounded-xl flex flex-col items-center justify-center shadow-lg">
                 <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Total Signals</span>
                 <span className="text-3xl font-mono text-white font-bold">{stats.total}</span>
             </div>
-            {/* Pending (Red) */}
             <div className="bg-[#0a0a0a] border border-red-900/30 p-4 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-red-900/10">
                 <span className="text-red-500 text-[10px] uppercase tracking-widest font-bold mb-1">Danger / Pending</span>
                 <span className="text-3xl font-mono text-red-500 font-bold">{stats.pending}</span>
             </div>
-            {/* Active (Blue) */}
             <div className="bg-[#0a0a0a] border border-blue-900/30 p-4 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-blue-900/10">
                 <span className="text-blue-500 text-[10px] uppercase tracking-widest font-bold mb-1">Units Deployed</span>
                 <span className="text-3xl font-mono text-blue-500 font-bold">{stats.active}</span>
             </div>
-            {/* Resolved (Green) */}
             <div className="bg-[#0a0a0a] border border-green-900/30 p-4 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-green-900/10">
                 <span className="text-green-500 text-[10px] uppercase tracking-widest font-bold mb-1">Resolved</span>
                 <span className="text-3xl font-mono text-green-500 font-bold">{stats.resolved}</span>
             </div>
         </div>
 
-        {/* === MAIN SECTION: WELCOME & RECENT ACTIVITY === */}
+        {/* WELCOME & RECENT ACTIVITY */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* Left: Welcome Panel */}
