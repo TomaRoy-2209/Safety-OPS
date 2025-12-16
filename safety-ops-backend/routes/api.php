@@ -5,6 +5,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\IncidentController;
 use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\ChatController; // <--- ADD THIS LINE
+use App\Http\Controllers\API\ReportController;
 
 // --- 1. PUBLIC ROUTES (No Login Required) ---
 Route::prefix('auth')->group(function () {
@@ -25,9 +26,14 @@ Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('profile', [AuthController::class, 'profile']);
+        // Inside auth:api group
+       
+
     });
     Route::get('/chat/{incidentId}', [ChatController::class, 'index']);
     Route::post('/chat/{incidentId}', [ChatController::class, 'send']);
+    Route::get('/reports/generate', [ReportController::class, 'generate']);
+
     // --- CITIZEN FEATURES ---
     // Create a new report
     Route::post('/incidents', [IncidentController::class, 'store']);
