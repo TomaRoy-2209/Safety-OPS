@@ -1,20 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import axios from 'axios'; 
+import LiveChat from './LiveChat';
 
 export default function IntelViewer({ incident, onClose }) {
   const [mounted, setMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // 1. Store who is looking at this
 
   useEffect(() => {
     setMounted(true);
-    // DEBUG: Check what data we are actually receiving
-    console.log("INTEL VIEWER DATA:", incident); 
+    console.log("INTEL VIEWER DATA:", incident);
+
+    // 2. Fetch the Current User (Required for Chat to know who sent the message)
+    const fetchUser = async () => {
+        try {
+            const token = localStorage.getItem('jwt');
+            if (token) {
+                const res = await axios.get("http://localhost:1801/api/auth/profile", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCurrentUser(res.data.user || res.data);
+            }
+        } catch (error) {
+            console.error("Could not verify identity for secure chat", error);
+        }
+    };
+    fetchUser();
+
     return () => setMounted(false);
   }, [incident]);
 
   if (!incident || !mounted) return null;
 
-  // This "modalContent" is what we want to render
   const modalContent = (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       
@@ -33,7 +51,7 @@ export default function IntelViewer({ incident, onClose }) {
         </div>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
             
             {/* Description */}
             <div className="bg-blue-900/10 border-l-2 border-blue-500 p-4 rounded-r">
@@ -48,13 +66,11 @@ export default function IntelViewer({ incident, onClose }) {
                     Attached Visuals
                 </h3>
 
-                {/* CHECK 1: Do we have evidence? */}
                 {incident.evidence && incident.evidence.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {incident.evidence.map((file, index) => (
                             <div key={index} className="group relative bg-black border border-gray-800 rounded-lg overflow-hidden">
                                 
-                                {/* CHECK 2: Is it an Image? */}
                                 {(file.file_type === 'image' || file.file_type.includes('image')) && (
                                     <img 
                                         src={file.file_path} 
@@ -63,12 +79,10 @@ export default function IntelViewer({ incident, onClose }) {
                                         onError={(e) => {
                                             e.target.onerror = null; 
                                             e.target.src="https://via.placeholder.com/400x300?text=BROKEN+LINK";
-                                            console.error("Image failed to load:", file.file_path);
                                         }}
                                     />
                                 )}
 
-                                {/* CHECK 3: Is it a Video? */}
                                 {(file.file_type === 'video' || file.file_type.includes('video')) && (
                                     <video controls className="w-full h-64 object-cover bg-black">
                                         <source src={file.file_path} type="video/mp4" />
@@ -84,17 +98,33 @@ export default function IntelViewer({ incident, onClose }) {
                     </div>
                 ) : (
                     <div className="p-8 text-center border border-dashed border-gray-800 rounded-lg bg-gray-900/50">
-                        <p className="text-gray-500 font-mono text-sm">NO VISUAL EVIDENCE FOUND IN DATABASE</p>
-                        <p className="text-xs text-gray-600 mt-2">Debug Info: Evidence array is empty or undefined.</p>
+                        <p className="text-gray-500 font-mono text-sm">NO VISUAL EVIDENCE FOUND</p>
                     </div>
                 )}
             </div>
+
+            {/* --- 3. LIVE CHAT SECTION (NEW) --- */}
+            <div className="border-t border-gray-800 pt-6">
+                <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Direct Uplink (Live)
+                </h3>
+                
+                {currentUser ? (
+                    <LiveChat incidentId={incident.id} user={currentUser} />
+                ) : (
+                    <div className="h-20 flex items-center justify-center text-blue-500 font-mono animate-pulse">
+                        ESTABLISHING SECURE HANDSHAKE...
+                    </div>
+                )}
+            </div>
+
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-800 bg-[#111] flex justify-end gap-3">
-            <button onClick={onClose} className="px-4 py-2 border border-gray-600 text-gray-300 text-sm font-bold rounded">
-                CLOSE
+            <button onClick={onClose} className="px-4 py-2 border border-gray-600 text-gray-300 text-sm font-bold rounded hover:bg-white hover:text-black transition-all">
+                CLOSE DOSSIER
             </button>
         </div>
 
@@ -102,6 +132,5 @@ export default function IntelViewer({ incident, onClose }) {
     </div>
   );
 
-  // MAGIC: This teleports the modal to the <body> tag
   return createPortal(modalContent, document.body);
 }

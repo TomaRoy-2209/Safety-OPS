@@ -94,18 +94,14 @@ class IncidentController extends Controller
     }
 
 // --- TARIN'S FEATURE: Citizen "My Reports" ---
+    // --- TARIN'S FEATURE: Citizen "My Reports" ---
     public function myReports()
     {
-        // FIX: Only fetch reports where user_id matches the authenticated user
-        $incidents = Incident::where('user_id', auth()->id()) 
+        // FIX: Return the array directly so the frontend .map() works immediately
+        return Incident::where('user_id', auth()->id()) 
                         ->with('evidence') 
                         ->orderBy('created_at', 'desc')
                         ->get();
-        
-        return response()->json([
-            'status' => 'success',
-            'data' => $incidents
-        ], 200);
     }
 
     // --- TOMA'S FEATURE: Assign Incident ---
