@@ -48,6 +48,9 @@ export default function DashboardLayout({ children, title }) {
         // --- ADMIN ONLY ---
         { label: 'User Database', href: '/admin/users', icon: '👥', roles: ['admin'] },
         { label: 'Access Control', href: '/admin/access-control', icon: '🔑', roles: ['admin'] },
+
+        { label: 'Export Reports', href: '/admin/reports', icon: '📂', roles: ['admin'] },
+
     ];
 
     if (!role) return null;
