@@ -4,8 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\IncidentController;
 use App\Http\Controllers\API\AdminController;
-use App\Http\Controllers\API\ChatController; // <--- ADD THIS LINE
-use App\Http\Controllers\API\ReportController;
+use App\Http\Controllers\API\ChatController;       // From Main
+use App\Http\Controllers\API\ReportController;     // From Main
+use App\Http\Controllers\API\RiskAssessmentController; // From Tarin's Feature
 
 
 // --- 1. PUBLIC ROUTES (No Login Required) ---
@@ -27,10 +28,12 @@ Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('profile', [AuthController::class, 'profile']);
-        // Inside auth:api group
-       
-
     });
+
+    // --- TARIN'S NEW FEATURE: RISK SCORING ---
+    Route::get('/analytics/risk-assessment', [RiskAssessmentController::class, 'getRiskAnalysis']);
+
+    // --- CHAT & REPORTS ---
     Route::get('/chat/{incidentId}', [ChatController::class, 'index']);
     Route::post('/chat/{incidentId}', [ChatController::class, 'send']);
     Route::get('/reports/generate', [ReportController::class, 'generate']);
@@ -56,6 +59,5 @@ Route::middleware('auth:api')->group(function () {
     // User Management
     Route::get('/admin/users', [AdminController::class, 'index']);
     Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
-    // Inside middleware('auth:api') group:
     Route::post('/admin/users', [AdminController::class, 'createUser']);
 });

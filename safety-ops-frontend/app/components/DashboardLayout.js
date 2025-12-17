@@ -46,11 +46,12 @@ export default function DashboardLayout({ children, title }) {
         { label: 'Tactical Map', href: '/map', icon: '🗺️', roles: ['admin', 'responder'] },
 
         // --- ADMIN ONLY ---
+        // ADDED TARIN'S FEATURE HERE:
+        { label: 'Predictive Risk', href: '/admin/risk-assessment', icon: '📉', roles: ['admin'] }, 
+        
         { label: 'User Database', href: '/admin/users', icon: '👥', roles: ['admin'] },
         { label: 'Access Control', href: '/admin/access-control', icon: '🔑', roles: ['admin'] },
-
         { label: 'Export Reports', href: '/admin/reports', icon: '📂', roles: ['admin'] },
-
     ];
 
     if (!role) return null;

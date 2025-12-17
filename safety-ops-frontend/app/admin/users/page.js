@@ -20,7 +20,7 @@ export default function UserManagement() {
         }
 
         try {
-            // FIX: We now attach the token in the headers
+            // FIX: Keep the Main Branch version which includes Auth Headers
             const res = await axios.get('http://127.0.0.1:1801/api/admin/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
