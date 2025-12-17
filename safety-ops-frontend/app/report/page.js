@@ -4,21 +4,18 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '../components/DashboardLayout';
 
-
 export default function ReportPage() {
     const router = useRouter();
-
 
     // --- STATE MANAGEMENT ---
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
-   
-    // GPS State (New Feature)
+    
+    // GPS State
     const [locationStatus, setLocationStatus] = useState('pending'); // pending, detecting, success, error
     const [coords, setCoords] = useState({ lat: null, lng: null });
-
 
     // --- 1. GPS LOGIC ---
     const getLocation = () => {
@@ -44,12 +41,10 @@ export default function ReportPage() {
         }
     };
 
-
-    // --- 2. SUBMIT LOGIC (FIXED: One-Step Request) ---
+    // --- 2. SUBMIT LOGIC ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
 
         const token = localStorage.getItem('jwt');
         if (!token) {
@@ -58,44 +53,37 @@ export default function ReportPage() {
             return;
         }
 
-
         if (!coords.lat || !coords.lng) {
             alert("⚠️ Location is Required! Please click 'Acquire GPS Lock'.");
             setLoading(false);
             return;
         }
 
-
         try {
+            // FIX: Using the Main Branch Logic (Single Step Submission)
             const formData = new FormData();
             formData.append('title', title);
             formData.append('description', desc);
             formData.append('latitude', coords.lat);
             formData.append('longitude', coords.lng);
-           
+            
             if (file) {
                 formData.append('media', file);
             }
 
-
-            // --- THE FIX IS HERE ---
-            // We removed 'Content-Type': 'multipart/form-data'
-            // The browser will now automatically add it WITH the correct boundary.
-            await axios.post('http://localhost:1801/api/incidents', formData, {
+            // Send to Backend (Port 1801)
+            await axios.post('http://127.0.0.1:1801/api/incidents', formData, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
-           
+            
             alert("✅ Report & Evidence Submitted Successfully!");
 
-
-            // --- SMART REDIRECT FIX ---
-            // Check the user's role to send them to the correct home
+            // --- SMART REDIRECT ---
+            // Send user to their correct dashboard
             const role = localStorage.getItem('role');
 
-
-            // 2. Send them to their specific folder
             if (role === 'admin') {
                 router.push('/admin-dashboard');
             }
@@ -103,17 +91,15 @@ export default function ReportPage() {
                 router.push('/responder-dashboard');
             }
             else if (role === 'worker') {
-                router.push('/worker-dashboard'); // Fire, Police, Medical units
+                router.push('/worker-dashboard');
             }
             else {
-                router.push('/dashboard'); // Default for Citizens
+                router.push('/dashboard'); // Citizen Default
             }
-
 
         } catch (error) {
             console.error("Submission Error:", error);
             if (error.response) {
-                // If it's a 401, the token actually expired
                 if (error.response.status === 401) {
                     alert("Session Expired. Please Login Again.");
                     router.push('/login');
@@ -130,18 +116,16 @@ export default function ReportPage() {
         }
     };
 
-
     return (
         <DashboardLayout title="NEW INCIDENT REPORT">
             <div className="max-w-2xl mx-auto">
                 <form onSubmit={handleSubmit} className="space-y-6 bg-[#0a0a0a] p-8 rounded-xl border border-gray-800 shadow-2xl">
-                   
+                    
                     {/* Header */}
                     <div className="border-b border-gray-800 pb-4 mb-4">
                         <h3 className="text-white font-bold text-lg">Incident Details</h3>
                         <p className="text-gray-500 text-sm">Please provide accurate information for rapid response.</p>
                     </div>
-
 
                     {/* Title Input */}
                     <div>
@@ -156,7 +140,6 @@ export default function ReportPage() {
                         />
                     </div>
 
-
                     {/* Description Input */}
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Detailed Description</label>
@@ -169,20 +152,19 @@ export default function ReportPage() {
                         />
                     </div>
 
-
-                    {/* --- NEW: GPS LOCATION BLOCK --- */}
+                    {/* GPS BLOCK */}
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Incident Location</label>
                         <div className="bg-[#111] border border-gray-700 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                           
+                            
                             {/* Status Indicators */}
                             <div className="flex-1">
                                 {locationStatus === 'success' ? (
                                     <div>
                                         <div className="text-green-500 font-bold text-sm flex items-center gap-2">
                                             <span className="relative flex h-2 w-2">
-                                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                                             </span>
                                             GPS SIGNAL LOCKED
                                         </div>
@@ -197,7 +179,6 @@ export default function ReportPage() {
                                     </div>
                                 )}
                             </div>
-
 
                             {/* GPS Button */}
                             <button
@@ -216,8 +197,7 @@ export default function ReportPage() {
                         </div>
                     </div>
 
-
-                    {/* Evidence Upload (Your Preferred Style) */}
+                    {/* Evidence Upload */}
                     <div>
                         <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Digital Evidence (Optional)</label>
                         <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center hover:border-blue-500 transition-colors bg-[#111]/50 group cursor-pointer relative">
@@ -234,7 +214,6 @@ export default function ReportPage() {
                             </div>
                         </div>
                     </div>
-
 
                     {/* Submit Button */}
                     <button
@@ -254,7 +233,6 @@ export default function ReportPage() {
                             </>
                         )}
                     </button>
-
 
                 </form>
             </div>
