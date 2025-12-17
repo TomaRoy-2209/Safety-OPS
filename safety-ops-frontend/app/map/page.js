@@ -14,8 +14,8 @@ export default function MapPage() {
     const [incidents, setIncidents] = useState([]);
 
     useEffect(() => {
-        // NOTE: Check your port (1801 vs 8000)
-        axios.get('http://127.0.0.1:8000/api/incidents/all')
+        // NOTE: Check your port (1801 vs 1801)
+        axios.get('http://127.0.0.1:1801/api/incidents/all')
             .then(res => setIncidents(res.data.data))
             .catch(err => console.error(err));
     }, []);

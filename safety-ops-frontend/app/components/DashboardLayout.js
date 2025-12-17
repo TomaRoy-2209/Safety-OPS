@@ -23,6 +23,12 @@ export default function DashboardLayout({ children, title }) {
           <p className="px-2 text-xs font-bold text-cyber-muted uppercase tracking-widest mb-3 mt-6">Module 2</p>
           <NavLink href="/live-feed" label="Live Feed" />
           <NavLink href="/map" label="Intel Map" />
+          <p className="px-2 text-xs font-bold text-cyber-muted uppercase tracking-widest mb-3 mt-6">
+  Module 3
+</p>
+
+<NavLink href="/admin/risk-assessment" label="Predictive Risk" />
+
         </nav>
 
         <div className="p-4 border-t border-cyber-border">

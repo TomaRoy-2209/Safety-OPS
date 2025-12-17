@@ -18,7 +18,7 @@ export default function UserManagementPage() {
 
     const fetchUsers = async () => {
         try {
-            // Note: Check your port (1801 vs 8000)
+            // Note: Check your port (1801 vs 1801)
             const res = await axios.get('http://127.0.0.1:1801/api/admin/users');
             setUsers(res.data);
             setLoading(false);

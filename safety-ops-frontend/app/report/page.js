@@ -33,7 +33,7 @@ export default function ReportPage() {
         setLoading(true);
         try {
             // 3. SEND REPORT
-            // NOTE: Check your terminal. If your backend is on port 8000, change 1801 to 8000.
+            // NOTE: Check your terminal. If your backend is on port 1801, change 1801 to 1801.
             const res = await axios.post('http://127.0.0.1:1801/api/incidents', form);
             
             // 4. CAPTURE THE ID FROM BACKEND RESPONSE
