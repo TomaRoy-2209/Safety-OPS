@@ -18,17 +18,18 @@ class AdminController extends Controller
     // --- SABRINA'S FEATURE: Create Agency User ---
     public function createUser(Request $request)
     {
-        // 1. Validate
+        // 1. Validate (Add 'phone' here!)
         $validated = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6',
             'agency' => 'nullable|string',
             'unit' => 'nullable|string',
+            'phone' => 'nullable|string', // <--- ADD THIS LINE
             'role' => 'required|in:admin,responder,citizen,worker', 
         ]);
 
-        // 2. Create User (Explicitly mapping fields)
+        // 2. Create User (Add 'phone' here!)
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -37,6 +38,7 @@ class AdminController extends Controller
             // Use the null coalescing operator ?? to ensure it's not undefined
             'agency' => $validated['agency'] ?? null,
             'unit' => $validated['unit'] ?? null,
+            'phone' => $validated['phone'] ?? null, // <--- AND ADD THIS LINE
         ]);
 
         return response()->json(['message' => 'User Created', 'user' => $user], 201);

@@ -7,6 +7,7 @@ use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\ChatController; // <--- ADD THIS LINE
 use App\Http\Controllers\API\ReportController;
 
+
 // --- 1. PUBLIC ROUTES (No Login Required) ---
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);

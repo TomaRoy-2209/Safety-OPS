@@ -10,7 +10,8 @@ use App\Models\Incident;
 use App\Models\IncidentMedia;
 use Illuminate\Support\Facades\DB; // IMPORT THIS!
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
-
+use App\Services\SMSService; // <--- Add This
+use App\Models\User; 
 
 class IncidentController extends Controller
 {
@@ -101,20 +102,43 @@ class IncidentController extends Controller
 
 
     // --- ASSIGN UNIT ---
-    public function assign(Request $request, $id)
+     public function assign(Request $request, $id)
     {
+        // 1. Permission Check
         if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'responder') {
              return response()->json(['message' => 'Unauthorized'], 403);
         }
-       
+        
+        // 2. Update Incident Status
         $incident = Incident::find($id);
-        $incident->assigned_agency = $request->agency;
+        if (!$incident) {
+            return response()->json(['message' => 'Incident not found'], 404);
+        }
+
+        $incident->assigned_agency = $request->agency; 
         $incident->status = 'dispatched';
         $incident->save();
 
+        // 3. SMS TRIGGER LOGIC
+        // We look for a User whose 'unit' matches the assigned agency name
+        $responder = User::where('unit', $request->agency)->first();
 
-        return response()->json(['message' => 'Unit Dispatched'], 200);
+        $smsStatus = "No phone number found";
+
+        if ($responder && $responder->phone) {
+            $msg = "ALERT: You have been assigned Incident #{$incident->id}: '{$incident->title}'. Priority: HIGH. Log in to SafetyOps for details.";
+            
+            // Send the SMS
+            $sent = SMSService::send($responder->phone, $msg);
+            $smsStatus = $sent ? "SMS Sent" : "SMS Failed";
+        }
+
+        return response()->json([
+            'message' => "Unit Dispatched & $smsStatus",
+            'incident_id' => $incident->id
+        ], 200);
     }
+
 
 
     // --- PUBLIC MAP DATA ---

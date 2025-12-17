@@ -23,7 +23,8 @@ class User extends Authenticatable implements JWTSubject // <--- IMPORTANT IMPLE
         'password',
         'role',
         'agency', // Ensure these are here
-        'unit',   // Ensure these are here
+        'unit',
+        'phone',   // Ensure these are here
     ];
 
     /**

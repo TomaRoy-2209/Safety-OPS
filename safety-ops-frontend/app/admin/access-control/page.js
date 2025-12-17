@@ -5,10 +5,12 @@ import DashboardLayout from '../../components/DashboardLayout';
 
 export default function AccessControlPanel() {
     // 1. HARDCODE ROLE TO 'worker'
+    // FIXED: Added 'phone' to the initial state so the input field works
     const [formData, setFormData] = useState({
         name: '', 
         email: '', 
         password: '', 
+        phone: '', // <--- CRITICAL FIX: Initialize phone state
         role: 'worker', // <--- FORCED
         agency: 'Police Dept', 
         unit: 'Alpha Team'
@@ -41,7 +43,8 @@ export default function AccessControlPanel() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSuccess(`✅ FIELD UNIT DEPLOYED: ${formData.name} assigned to ${formData.unit}`);
-            setFormData({ ...formData, name: '', email: '', password: '' }); 
+            // Reset form but keep the agency selection logic intact
+            setFormData({ ...formData, name: '', email: '', password: '', phone: '' }); 
         } catch (error) {
             console.error(error);
             alert("Creation Failed. Email might be in use.");
@@ -109,6 +112,20 @@ export default function AccessControlPanel() {
                             className="w-full bg-[#111] border border-gray-700 rounded p-3 text-white text-sm focus:border-blue-500 outline-none"
                             value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                         />
+                        
+                        {/* --- NEW PHONE INPUT --- */}
+                        <div>
+                            <label className="block text-gray-400 text-xs font-bold mb-1 uppercase">Mobile Number (For SMS Alerts)</label>
+                            <input 
+                                type="text"
+                                placeholder="e.g. 01711223344"
+                                required
+                                className="w-full bg-[#111] border border-gray-700 rounded p-3 text-white text-sm focus:border-blue-500 outline-none font-mono"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                            />
+                        </div>
+
                         <input 
                             type="password" placeholder="Password" required
                             className="w-full bg-[#111] border border-gray-700 rounded p-3 text-white text-sm focus:border-blue-500 outline-none"
@@ -139,6 +156,7 @@ export default function AccessControlPanel() {
                         <ul className="mt-4 space-y-2 list-disc list-inside text-xs font-mono text-gray-500">
                             <li>These users will have <strong>ReadOnly</strong> access to the system.</li>
                             <li>They will <strong>ONLY</strong> receive dispatch alerts for their specific unit.</li>
+                            <li><strong>SMS Alerts:</strong> Ensure the phone number is valid (BD Format).</li>
                         </ul>
                     </div>
                 </div>
