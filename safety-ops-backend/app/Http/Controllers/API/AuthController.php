@@ -136,4 +136,16 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unable to refresh token', 'details' => $e->getMessage()], 401);
         }
     }
+    public function updateFcmToken(Request $request)
+    {
+    $request->validate(['token' => 'required|string']);
+
+    $user = auth()->user();
+    $user->fcm_token = $request->token;
+    $user->save();
+
+    return response()->json(['message' => 'Token updated successfully']);
+    }
+
 }
+    
