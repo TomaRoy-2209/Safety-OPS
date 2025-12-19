@@ -1,17 +1,16 @@
 <?php
 
-
 namespace App\Http\Controllers\API;
-
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Incident;
 use App\Models\IncidentMedia;
-use Illuminate\Support\Facades\DB; // IMPORT THIS!
+use Illuminate\Support\Facades\DB;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
-use App\Services\SMSService; // <--- Add This
-use App\Models\User; 
+use App\Services\SMSService;
+use App\Models\User;
+use App\Services\FCMService; // <--- ✅ IMPORTED FCM SERVICE
 
 class IncidentController extends Controller
 {
@@ -27,9 +26,8 @@ class IncidentController extends Controller
             'media' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:40960' // Max 40MB
         ]);
 
-
         return DB::transaction(function () use ($request, $validated) {
-           
+            
             // 2. Create the Incident
             $incident = Incident::create([
                 'title' => $validated['title'],
@@ -40,16 +38,14 @@ class IncidentController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-
             // 3. Handle Cloudinary Upload IMMEDIATELY
             if ($request->hasFile('media')) {
-               
+                
                 // Upload to Cloudinary
                 $uploadedFile = $request->file('media')->storeOnCloudinary('incidents');
                 $url = $uploadedFile->getSecurePath();
                 $fileType = $request->file('media')->getClientMimeType();
                 $simpleFileType = str_starts_with($fileType, 'video') ? 'video' : 'image';
-
 
                 // Save to IncidentMedia Table
                 $media = new IncidentMedia();
@@ -59,7 +55,6 @@ class IncidentController extends Controller
                 $media->save();
             }
 
-
             return response()->json([
                 'message' => 'Incident Reported Successfully',
                 'incident' => $incident
@@ -67,17 +62,14 @@ class IncidentController extends Controller
         });
     }
 
-
     // --- RESPONDER DASHBOARD FEED ---
     public function index()
     {
         $user = auth()->user();
 
-
         if ($user->role === 'admin' || $user->role === 'responder') {
             return Incident::with('evidence')->orderBy('created_at', 'desc')->get();
         }
-
 
         if ($user->role === 'worker') {
             return Incident::with('evidence')
@@ -86,10 +78,8 @@ class IncidentController extends Controller
                         ->get();
         }
 
-
         return response()->json([], 403);
     }
-
 
     // --- CITIZEN "MY REPORTS" ---
     public function myReports()
@@ -100,46 +90,64 @@ class IncidentController extends Controller
                         ->get();
     }
 
-
-    // --- ASSIGN UNIT ---
+    // --- ASSIGN UNIT (UPDATED WITH FCM) ---
      public function assign(Request $request, $id)
     {
         // 1. Permission Check
         if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'responder') {
              return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+       
         // 2. Update Incident Status
         $incident = Incident::find($id);
         if (!$incident) {
             return response()->json(['message' => 'Incident not found'], 404);
         }
 
-        $incident->assigned_agency = $request->agency; 
+        $incident->assigned_agency = $request->agency;
         $incident->status = 'dispatched';
         $incident->save();
 
-        // 3. SMS TRIGGER LOGIC
+        // 3. NOTIFICATION LOGIC (SMS + FCM)
         // We look for a User whose 'unit' matches the assigned agency name
         $responder = User::where('unit', $request->agency)->first();
 
         $smsStatus = "No phone number found";
+        $fcmStatus = "No FCM Token found";
 
-        if ($responder && $responder->phone) {
-            $msg = "ALERT: You have been assigned Incident #{$incident->id}: '{$incident->title}'. Priority: HIGH. Log in to SafetyOps for details.";
-            
-            // Send the SMS
-            $sent = SMSService::send($responder->phone, $msg);
-            $smsStatus = $sent ? "SMS Sent" : "SMS Failed";
+        if ($responder) {
+            // A. SEND SMS
+            if ($responder->phone) {
+                $msg = "ALERT: You have been assigned Incident #{$incident->id}: '{$incident->title}'. Priority: HIGH. Log in to SafetyOps for details.";
+                $sent = SMSService::send($responder->phone, $msg);
+                $smsStatus = $sent ? "SMS Sent" : "SMS Failed";
+            }
+
+            // B. SEND PUSH NOTIFICATION (✅ NEW CODE)
+            if ($responder->fcm_token) {
+                FCMService::send(
+                    $responder->fcm_token,
+                    "🚨 New Incident Assigned",
+                    "You have been deployed to Incident #{$incident->id}: {$incident->title}"
+                );
+                $fcmStatus = "Notification Sent";
+            }
+        }
+        $citizen = User::find($incident->user_id);
+
+        if ($citizen && $citizen->fcm_token) {
+            FCMService::send(
+                $citizen->fcm_token,
+                "🚑 Status Update: Help is Coming!",
+                "Your report '{$incident->title}' has been dispatched to {$request->agency}. Stay safe."
+            );
         }
 
         return response()->json([
-            'message' => "Unit Dispatched & $smsStatus",
+            'message' => "Unit Dispatched. $smsStatus. $fcmStatus.",
             'incident_id' => $incident->id
         ], 200);
     }
-
-
 
     // --- PUBLIC MAP DATA ---
     public function getAll()
@@ -152,3 +160,4 @@ class IncidentController extends Controller
         ], 200);
     }
 }
+
