@@ -19,6 +19,7 @@ Route::prefix('auth')->group(function () {
 Route::get('/incidents/all', [IncidentController::class, 'getAll']);
 
 
+
 // --- 2. PROTECTED ROUTES (Login Required) ---
 // Everything inside here requires a valid Token (JWT)
 Route::middleware('auth:api')->group(function () {
@@ -29,10 +30,9 @@ Route::middleware('auth:api')->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('profile', [AuthController::class, 'profile']);
         Route::post('/fcm-token', [AuthController::class, 'updateFcmToken']);
+        // --- TARIN'S NEW FEATURE: RISK SCORING ---
+        Route::get('/analytics/risk-assessment', [RiskAssessmentController::class, 'getRiskAnalysis']);
     });
-
-    // --- TARIN'S NEW FEATURE: RISK SCORING ---
-    Route::get('/analytics/risk-assessment', [RiskAssessmentController::class, 'getRiskAnalysis']);
 
     // --- CHAT & REPORTS ---
     Route::get('/chat/{incidentId}', [ChatController::class, 'index']);
@@ -56,9 +56,13 @@ Route::middleware('auth:api')->group(function () {
     // --- ADMIN ONLY CONTROLS ---
     // Dispatch/Assign a unit
     Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
+    // Place this inside your existing Route::middleware('auth:api')->group(...)
+
+    Route::post('/admin/disaster-mode', [App\Http\Controllers\API\AdminController::class, 'triggerDisasterMode']);
     
     // User Management
     Route::get('/admin/users', [AdminController::class, 'index']);
     Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
     Route::post('/admin/users', [AdminController::class, 'createUser']);
+    
 });

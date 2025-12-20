@@ -39,6 +39,15 @@ class FCMService
                 "notification" => [
                     "title" => $title,
                     "body" => $body
+                ],
+                // ✅ ADD THIS SECTION for better Web delivery
+                "webpush" => [
+                    "headers" => [
+                        "Urgency" => "high"
+                    ],
+                    "notification" => [
+                        "requireInteraction" => true
+                    ]
                 ]
             ]
         ];

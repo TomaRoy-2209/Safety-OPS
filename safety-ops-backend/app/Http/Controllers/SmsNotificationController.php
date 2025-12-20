@@ -10,7 +10,7 @@ class SmsNotificationController extends Controller {
             'message' => 'required|string',
         ]);
 
-        $apiKey = env('SMS_NET_BD_API_KEY');
+        $apiKey = env('SMS_API_KEY');
         $number = $request->number;
         // Accept both with or without country code
         if (strpos($number, '880') !== 0) {

@@ -16,7 +16,9 @@ export default function RiskCard({ data }) {
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div>
                     <h3 className="text-xl font-bold text-white">{data.zone}</h3>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">AI Confidence: 94%</p>
+                    <div className="text-sm text-gray-400">
+                        AI Confidence: <span className="text-green-400">{data.ai_confidence}%</span>
+                    </div>
                 </div>
                 <div className={`text-center px-3 py-1 rounded border ${colorClass}`}>
                     <div className="text-2xl font-bold">{data.risk_score}</div>

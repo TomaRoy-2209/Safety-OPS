@@ -285,7 +285,7 @@ return [
             'senderid' => env('SMSINBD_SENDERID', ''),
         ],
         SmsNetBD::class => [
-            'api_key' => env('SMS_NET_BD_API_KEY'),
+            'api_key' => env('SMS_API_KEY'),
         ],
         SmsQ::class => [
             'sender_id' => env('SMS_SMSQ_SENDER_ID', ''),

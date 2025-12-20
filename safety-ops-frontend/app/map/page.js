@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import dynamic from 'next/dynamic'; // This makes the map work!
-import DashboardLayout from '../../components/DashboardLayout';
+import DashboardLayout from '../components/DashboardLayout';
 
 // Dynamically import the map so it doesn't crash the server
-const MapComponent = dynamic(() => import('../../components/MapComponent'), { 
+const MapComponent = dynamic(() => import('../components/MapComponent'), { 
     ssr: false,
     loading: () => <p className="text-white">Loading Map...</p>
 });

@@ -10,6 +10,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [role, setRole] = useState("citizen");
+  // ✅ NEW: Add Phone State
+  const [phone, setPhone] = useState(""); 
+  
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,12 +33,13 @@ export default function RegisterPage() {
             password,
             password_confirmation: passwordConfirmation,
             role,
+            phone, // ✅ NEW: Send Phone to Backend
           })
         });
 
         const data = await res.json();
         
-        if (data.token) {
+        if (data.token || res.ok) { // Check res.ok for safety
           setSuccess("Registration Successful! Redirecting to Login...");
           setTimeout(() => {
             router.push("/login");
@@ -160,6 +164,19 @@ export default function RegisterPage() {
                             required
                         />
                     </div>
+                </div>
+
+                {/* Phone Number Input (UPDATED) */}
+                <div className="mb-4">
+                    <label className="block text-xs font-bold text-blue-400 uppercase mb-2 ml-1">Phone Number (for Alerts)</label>
+                    <input 
+                        type="text" 
+                        name="phone"
+                        value={phone} // ✅ Connected to State
+                        placeholder="+88017..."
+                        className="w-full bg-black/50 border border-gray-700 text-white rounded-lg p-3 focus:border-blue-500 outline-none transition-all placeholder-gray-600"
+                        onChange={(e) => setPhone(e.target.value)} // ✅ Fixed Function
+                    />
                 </div>
 
                 {/* Submit Button */}

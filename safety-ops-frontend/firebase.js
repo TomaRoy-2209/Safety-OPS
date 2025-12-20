@@ -11,51 +11,49 @@ const firebaseConfig = {
   appId: "1:691293895604:web:7677854e6a6f405d9a90e1"
 };
 
-// Initialize App normally
 const app = initializeApp(firebaseConfig);
-
-// ⚠️ CHANGE STARTS HERE: Handle Server vs Client ⚠️
 let messaging = null;
 
 if (typeof window !== "undefined") {
-  // We are in the browser, so it's safe to start Messaging
   try {
     messaging = getMessaging(app);
+    console.log("✅ Firebase Messaging Initialized");
   } catch (err) {
-    console.error("Firebase Messaging failed to init:", err);
+    console.error("❌ Firebase Init Failed:", err);
   }
 }
+
 export const requestForToken = async () => {
+  console.log("🚀 STARTING TOKEN REQUEST...");
+
   if (!messaging) return;
 
   try {
+    // 1. Manually Register the Service Worker
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    console.log("✅ Service Worker Registered. Waiting for it to be active...");
+
+    // 2. CRITICAL STEP: Wait for the Service Worker to be fully ready
+    // This fixes the "no active Service Worker" error
+    await navigator.serviceWorker.ready;
+    console.log("✅ Service Worker is ACTIVE.");
+
+    // 3. Get Token using the specific registration
     const currentToken = await getToken(messaging, { 
-        vapidKey: 'BAwhE--DmT7nG5HGWIG_q95GM8d9OOWSBiU8H-nJqjsnZvD1F3A51NNH5uNrDbCFkL4srorB0r-Y1-EmAp6rWtg' // Keep your existing VAPID key!
+        vapidKey: 'BAwhE--DmT7nG5HGWIG_q95GM8d9OOWSBiU8H-nJqjsnZvD1F3A51NNH5uNrDbCFkL4srorB0r-Y1-EmAp6rWtg',
+        serviceWorkerRegistration: registration 
     });
 
     if (currentToken) {
-      console.log("🔥 FCM Token Generated:", currentToken);
+      console.log("🔥 FCM Token Received:", currentToken);
 
-      // --- THE FIX: CHECK EVERY POSSIBLE NAME ---
-      const loginToken = 
-        localStorage.getItem('jwt') || 
-        localStorage.getItem('token') || 
-        localStorage.getItem('access_token') || 
-        localStorage.getItem('auth_token');
-
+      const loginToken = localStorage.getItem('jwt');
       if (!loginToken) {
-          // If we are on the login page, this error is normal. Ignore it.
-          if (window.location.pathname === '/login' || window.location.pathname === '/') {
-             console.log("ℹ️ User not logged in yet. Waiting...");
-             return;
-          }
-          console.error("❌ ERROR: Could not find ANY login token in localStorage. Please check Application tab.");
-          return; 
+          console.log("No login token found (User logged out?)");
+          return;
       }
 
-      console.log("✅ Found Login Token. Sending to Backend...");
-
-      await fetch('http://127.0.0.1:1801/api/auth/fcm-token', {
+      await fetch('http://localhost:1801/api/auth/fcm-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,56 +63,17 @@ export const requestForToken = async () => {
       });
 
       console.log("🎉 SUCCESS: Token saved to Database!");
-      
     }
   } catch (err) {
-    console.log('Error retrieving token:', err);
+    console.error('❌ Token Error:', err);
   }
 };
 
 export const onMessageListener = () =>
   new Promise((resolve) => {
-    // If messaging is null, never resolve (just sit silently)
     if (!messaging) return; 
-    
     onMessage(messaging, (payload) => {
+      console.log("🔔 Message Received:", payload);
       resolve(payload);
     });
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

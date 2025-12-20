@@ -51,6 +51,8 @@ class RiskAssessmentController extends Controller
             if ($score > 60) $level = 'HIGH';
             if ($score > 85) $level = 'CRITICAL';
 
+            $confidence = min(99, 70 + ($total * 2));
+            
             $results[] = [
                 'zone' => $zone['name'],
                 'stats' => [
@@ -60,7 +62,8 @@ class RiskAssessmentController extends Controller
                 ],
                 'risk_score' => $score,
                 'risk_level' => $level,
-                'prediction' => $this->generatePrediction($level)
+                'prediction' => $this->generatePrediction($level),
+                'ai_confidence' => $confidence
             ];
         }
 
