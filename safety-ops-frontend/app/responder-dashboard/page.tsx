@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../components/DashboardLayout";
 import IntelViewer from "../components/IntelViewer";
+import { requestForToken, onMessageListener } from '../../firebase'; // ✅ 1. Import Firebase
 
 export default function WorkerDashboard() {
   const router = useRouter();
@@ -11,10 +12,9 @@ export default function WorkerDashboard() {
   const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState(null);
+  const [alertState, setAlertState] = useState(null); // Renamed to alertState to avoid conflict with window.alert
 
   // We track the IDs we have already seen.
-  // We ONLY alert if a NEW ID appears that wasn't in this list before.
   const knownIdsRef = useRef(new Set());
   const isFirstLoad = useRef(true);
 
@@ -42,24 +42,21 @@ export default function WorkerDashboard() {
               setUser(currentUser);
           }
 
-          // 2. Get ONLY My Assigned Tasks (Filtered by Backend)
+          // 2. Get ONLY My Assigned Tasks
           const taskRes = await axios.get("http://localhost:1801/api/incidents", {
              headers: { Authorization: `Bearer ${token}` }
           });
           
           const myTasks = Array.isArray(taskRes.data) ? taskRes.data : taskRes.data.data;
 
-          // 3. THE ALERT LOGIC
-          // If this is NOT the first load, check for new IDs
+          // 3. THE INTERNAL ALERT LOGIC (For New Tasks)
           if (!isFirstLoad.current) {
               const newIncomingTasks = myTasks.filter(t => !knownIdsRef.current.has(t.id));
               
               if (newIncomingTasks.length > 0) {
-                  // WE HAVE A NEW DISPATCH FROM ADMIN!
-                  setAlert(`🚨 COMMAND HAS ASSIGNED INCIDENT #${newIncomingTasks[0].id}`);
+                  setAlertState(`🚨 COMMAND HAS ASSIGNED INCIDENT #${newIncomingTasks[0].id}`);
                   playSiren();
-                  // Keep alert for 10 seconds
-                  setTimeout(() => setAlert(null), 10000);
+                  setTimeout(() => setAlertState(null), 10000);
               }
           }
 
@@ -78,7 +75,31 @@ export default function WorkerDashboard() {
 
   useEffect(() => {
       fetchData();
-      const interval = setInterval(fetchData, 3000); // Check for assignments every 3s
+      const interval = setInterval(fetchData, 3000); 
+
+      // ✅ 4. NEW: Token Sync Logic (Saves Token to DB)
+      const syncToken = async () => {
+        if (typeof window !== 'undefined') {
+            try {
+                await requestForToken(); 
+                console.log("✅ Responder Token Synced");
+            } catch (err) {
+                console.error("Token sync failed", err);
+            }
+        }
+      };
+      syncToken();
+
+      // ✅ 5. NEW: Listen for DISASTER ALERTS (Popup)
+      onMessageListener()
+        .then((payload) => {
+            // Browser Popup
+            alert(`🚨 ${payload.notification.title}: ${payload.notification.body}`);
+            // Optional: Also Trigger the Dashboard Siren
+            playSiren();
+        })
+        .catch((err) => console.log('failed: ', err));
+
       return () => clearInterval(interval);
   }, []);
 
@@ -95,13 +116,13 @@ export default function WorkerDashboard() {
       
       {selectedTask && <IntelViewer incident={selectedTask} onClose={() => setSelectedTask(null)} />}
 
-      {/* DISPATCH ALERT POPUP */}
-      {alert && (
+      {/* DISPATCH ALERT POPUP (Internal Task Alert) */}
+      {alertState && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[99999] animate-bounce w-[90%] max-w-lg">
             <div className="bg-red-600 text-white p-6 rounded-xl shadow-[0_0_50px_rgba(220,38,38,0.8)] border-4 border-white flex flex-col items-center text-center">
                 <span className="text-4xl mb-2">👮‍♂️</span>
                 <h2 className="text-3xl font-bold uppercase tracking-wider blink">New Dispatch Order</h2>
-                <p className="font-mono mt-2 text-lg font-bold">{alert}</p>
+                <p className="font-mono mt-2 text-lg font-bold">{alertState}</p>
                 <p className="text-xs mt-4 uppercase">Check Active Directives Below</p>
             </div>
         </div>
@@ -143,7 +164,7 @@ export default function WorkerDashboard() {
             </div>
 
             {tasks.length === 0 ? (
-                // EMPTY STATE (Most common state)
+                // EMPTY STATE
                 <div className="p-16 text-center border-2 border-dashed border-gray-800 rounded-xl bg-[#0a0a0a]/50 flex flex-col items-center">
                     <div className="w-16 h-16 bg-gray-900/50 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
 import DashboardLayout from "../components/DashboardLayout";
-import IntelViewer from "../components/IntelViewer"; 
+import IntelViewer from "../components/IntelViewer";
+import Link from 'next/link'; 
+import { requestForToken, onMessageListener } from '../../firebase'; // ✅ 1. Import This
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  // Default stats to avoid "undefined" errors
   const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, resolved: 0 });
   const [recentIncidents, setRecentIncidents] = useState([]);
   const [selectedIncident, setSelectedIncident] = useState(null); 
@@ -19,28 +20,21 @@ export default function AdminDashboard() {
     const token = localStorage.getItem("jwt");
     const role = localStorage.getItem("role");
 
-    // 2. Immediate Security Check
+    // 2. Security Check
     if (!token || role !== "admin") {
-      console.log("Unauthorized access attempt. Redirecting...");
       router.push("/login");
       return;
     }
 
     const fetchData = async () => {
         try {
-            // 3. Request Config with Explicit Headers
-            const config = {
-                headers: { Authorization: `Bearer ${token}` }
-            };
+            const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            // 4. Fetch Data (Sequential is safer for debugging than Promise.all if one fails)
             const profileReq = await axios.get("http://localhost:1801/api/auth/profile", config);
             const incidentsReq = await axios.get("http://localhost:1801/api/incidents", config);
 
-            // 5. Process User
             setUser(profileReq.data.user || profileReq.data);
 
-            // 6. Process Incidents
             const allIncidents = Array.isArray(incidentsReq.data) ? incidentsReq.data : incidentsReq.data.data;
             
             setStats({
@@ -55,19 +49,27 @@ export default function AdminDashboard() {
 
         } catch (error) {
             console.error("Dashboard Load Error:", error);
-            
-            // --- CRITICAL FIX: Force Logout on 401 ---
             if (error.response && error.response.status === 401) {
                 alert("Session Expired. Please login again.");
                 localStorage.removeItem('jwt');
                 localStorage.removeItem('role');
-                window.location.href = '/login'; // Hard reload is safer than router.push here
+                window.location.href = '/login'; 
             }
             setLoading(false);
         }
     };
 
+    // ✅ 3. NEW: Token Sync Logic
+    // This runs in the background to ensure 'fcm_token' is filled in the DB
+    const syncToken = async () => {
+        if (typeof window !== 'undefined') {
+            await requestForToken(); 
+        }
+    };
+
     fetchData();
+    syncToken(); // <--- Execute Sync
+
   }, [router]);
 
   if (loading) return (
@@ -121,13 +123,20 @@ export default function AdminDashboard() {
                     System integrity is optimal. You have <span className="text-white font-bold">{stats.pending} pending incidents</span> requiring immediate review and dispatch assignment.
                 </p>
                 <div className="flex gap-4 relative z-10">
-                     <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
+                      <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
                         <span>GO TO DISPATCH</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                     </button>
-                     <button onClick={() => router.push('/map')} className="bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 text-gray-300 px-6 py-2 rounded-lg font-bold text-sm transition-all">
+                      </button>
+                      <button onClick={() => router.push('/map')} className="bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 text-gray-300 px-6 py-2 rounded-lg font-bold text-sm transition-all">
                         VIEW LIVE MAP
-                     </button>
+                      </button>
+                      
+                      {/* ✅ 4. NEW: DISASTER BUTTON */}
+                      <Link href="/admin/disaster">
+                        <button className="bg-red-900/30 hover:bg-red-600 border border-red-800 text-red-200 px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)] flex items-center gap-2">
+                            <span>⚠️ EMERGENCY</span>
+                        </button>
+                      </Link>
                 </div>
             </div>
 

@@ -23,19 +23,21 @@ class SMSService
         $finalNumber = '88' . $cleanNumber;
 
         try {
-            // 3. Send Request to sms.net.bd (or your specific gateway)
-            // Note: If using a different provider, change this URL.
             $response = Http::get('https://api.sms.net.bd/sendsms', [
                 'api_key' => $apiKey,
                 'msg'     => $message,
                 'to'      => $finalNumber
             ]);
 
-            if ($response->successful()) {
+            $responseData = $response->json(); // Convert JSON to Array
+
+            // Check if HTTP was 200 OK AND if the API says "error: 0" (0 means success)
+            if ($response->successful() && isset($responseData['error']) && $responseData['error'] == 0) {
                 Log::info("✅ SMS Sent to {$finalNumber}");
                 return true;
             } else {
-                Log::error("❌ SMS Gateway Error: " . $response->body());
+                // Now it will correctly log the error (e.g., Insufficient Balance)
+                Log::error("❌ SMS Failed: " . ($responseData['msg'] ?? 'Unknown Error'));
                 return false;
             }
 

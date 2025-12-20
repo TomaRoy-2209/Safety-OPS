@@ -138,13 +138,20 @@ class AuthController extends Controller
     }
     public function updateFcmToken(Request $request)
     {
-    $request->validate(['token' => 'required|string']);
+        $request->validate(['token' => 'required|string']);
 
-    $user = auth()->user();
-    $user->fcm_token = $request->token;
-    $user->save();
+        // 🚨 CRITICAL FIX: Explicitly tell Laravel to use the 'api' guard (JWT)
+        // 'auth()->user()' might return null if the default guard is 'web'
+        $user = auth('api')->user(); 
 
-    return response()->json(['message' => 'Token updated successfully']);
+        if (!$user) {
+            return response()->json(['message' => 'User not found or Token Invalid'], 401);
+        }
+
+        $user->fcm_token = $request->token;
+        $user->save();
+
+        return response()->json(['message' => 'Token updated successfully']);
     }
 
 }

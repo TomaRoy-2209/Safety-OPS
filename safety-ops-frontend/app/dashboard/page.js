@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
-import DashboardLayout from "../components/DashboardLayout"; // <--- RESTORES SIDEBAR
-import LiveChat from "../components/LiveChat";             // <--- KEEPS CHAT
+import DashboardLayout from "../components/DashboardLayout"; 
+import LiveChat from "../components/LiveChat"; 
+import { requestForToken, onMessageListener } from '../../firebase'; // ✅ 1. Import Firebase Helpers
 
 export default function CitizenDashboard() {
   const router = useRouter();
@@ -42,7 +43,37 @@ export default function CitizenDashboard() {
         }
     };
 
+    // ✅ 2. NEW: Token Sync (Generates fcm_token in DB)
+    const syncToken = async () => {
+        if (typeof window !== 'undefined') {
+            try {
+                await requestForToken(); 
+                console.log("✅ Citizen Token Synced");
+            } catch (err) {
+                console.error("Token sync failed", err);
+            }
+        }
+    };
+
+    // ✅ 3. NEW: Listen for Alerts (Popup)
+    // ✅ 3. DEBUG LISTENER
+    // ✅ 3. DEBUG LISTENER (Replace your existing onMessageListener block)
+    onMessageListener()
+        .then((payload) => {
+            console.log("🔥 MESSAGE RECEIVED!", payload); // Look for this in F12 Console
+            
+            const title = payload?.notification?.title || "ALERT";
+            const body = payload?.notification?.body || "Emergency Broadcast";
+
+            // Try BOTH a standard alert and a console warning
+            alert(`🚨 ${title}: ${body}`);
+            console.warn(`🚨 ${title}: ${body}`); 
+        })
+        .catch((err) => console.log('failed: ', err));
+
     fetchData();
+    syncToken(); // <--- Run the sync
+
   }, [router]);
 
   if (loading) return (
