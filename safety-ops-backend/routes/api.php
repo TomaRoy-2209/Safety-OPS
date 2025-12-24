@@ -7,7 +7,7 @@ use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\RiskAssessmentController;
-use App\Http\Controllers\API\SummarizeController; 
+use App\Http\Controllers\API\SummarizeController;
 
 // --- 1. PUBLIC ROUTES (No Login Required) ---
 Route::prefix('auth')->group(function () {
@@ -26,10 +26,11 @@ Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('profile', [AuthController::class, 'profile']);
+        Route::post('/fcm-token', [AuthController::class, 'updateFcmToken']);
+        
+        // --- TARIN'S FEATURE: RISK SCORING ---
+        Route::get('/analytics/risk-assessment', [RiskAssessmentController::class, 'getRiskAnalysis']);
     });
-
-    // --- TARIN'S FEATURE ---
-    Route::get('/analytics/risk-assessment', [RiskAssessmentController::class, 'getRiskAnalysis']);
 
     // --- CHAT & REPORTS ---
     Route::get('/chat/{incidentId}', [ChatController::class, 'index']);
@@ -46,11 +47,16 @@ Route::middleware('auth:api')->group(function () {
 
     // --- ADMIN ONLY CONTROLS ---
     Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
+
+    // --- DISASTER MODE (From Incoming Merge) ---
+    Route::post('/admin/disaster-mode', [AdminController::class, 'triggerDisasterMode']);
+    
+    // --- USER MANAGEMENT ---
     Route::get('/admin/users', [AdminController::class, 'index']);
     Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
     Route::post('/admin/users', [AdminController::class, 'createUser']);
     
-    // ✅ TOMA'S AI FEATURE (This will work now because we imported it at the top)
+    // --- TOMA'S AI FEATURE (Your New Feature) ---
     Route::post('/incidents/{id}/summarize', [SummarizeController::class, 'generateSummary']);
 
 });

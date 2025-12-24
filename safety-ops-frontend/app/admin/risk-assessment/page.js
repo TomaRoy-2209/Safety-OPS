@@ -35,35 +35,37 @@ export default function RiskAssessmentPage() {
         fetchData();
     }, []);*/
     useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("jwt");
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem('jwt');
+                
+                // 1. Check Token
+                if (!token) { console.error("No token"); return; }
 
-      if (!token) {
-        console.error("JWT token not found. Please login first.");
-        return;
-      }
+                // 2. Call API
+                const res = await axios.get(
+                    "http://localhost:1801/api/auth/analytics/risk-assessment",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            Accept: "application/json",
+                        },
+                    }
+                );
 
-      const res = await axios.get(
-        "http://localhost:1801/api/auth/analytics/risk-assessment",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        }
-      );
+                // 🚨 CORRECT FIX FOR YOUR NEW CONTROLLER:
+                // Since the backend returns a direct array, we use res.data directly.
+                // We add "|| []" just in case it returns null.
+                setZones(res.data || []); 
 
-      setZones(res.data);
-    } catch (error) {
-      console.error("Risk API error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, []);
+            } catch (err) {
+                console.error("Risk API Error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
 
     return (

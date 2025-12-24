@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
 import DashboardLayout from "../components/DashboardLayout";
-import IntelViewer from "../components/IntelViewer"; 
+import IntelViewer from "../components/IntelViewer";
+import Link from 'next/link'; 
+import { requestForToken, onMessageListener } from '../../firebase'; // ✅ Import Firebase
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -21,9 +23,8 @@ export default function AdminDashboard() {
     const token = localStorage.getItem("jwt");
     const role = localStorage.getItem("role");
 
-    // 2. Immediate Security Check
+    // 2. Security Check
     if (!token || role !== "admin") {
-      console.log("Unauthorized access attempt. Redirecting...");
       router.push("/login");
       return;
     }
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
             // Process User
             setUser(profileReq.data.user || profileReq.data);
 
-            // 🚨 CRASH FIX IS HERE 🚨
+            // 🚨 CRASH FIX (Retained from HEAD)
             // We check: Is it an array? OR Is it inside .data? OR default to []
             const raw = incidentsReq.data;
             const allIncidents = Array.isArray(raw) ? raw : (raw.data || []);
@@ -71,7 +72,22 @@ export default function AdminDashboard() {
         }
     };
 
+    // ✅ 3. TOKEN SYNC LOGIC
+    // This runs in the background to ensure 'fcm_token' is filled in the DB
+    const syncToken = async () => {
+        if (typeof window !== 'undefined') {
+            try {
+                await requestForToken(); 
+                console.log("✅ Admin Token Synced");
+            } catch (err) {
+                console.error("Token sync failed", err);
+            }
+        }
+    };
+
     fetchData();
+    syncToken(); // <--- Execute Sync
+
   }, [router]);
 
   if (loading) return (
@@ -126,13 +142,20 @@ export default function AdminDashboard() {
                     System integrity is optimal. You have <span className="text-white font-bold">{stats.pending} pending incidents</span> requiring immediate review and dispatch assignment.
                 </p>
                 <div className="flex gap-4 relative z-10">
-                     <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
+                      <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
                         <span>GO TO DISPATCH</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                     </button>
-                     <button onClick={() => router.push('/map')} className="bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 text-gray-300 px-6 py-2 rounded-lg font-bold text-sm transition-all">
+                      </button>
+                      <button onClick={() => router.push('/map')} className="bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 text-gray-300 px-6 py-2 rounded-lg font-bold text-sm transition-all">
                         VIEW LIVE MAP
-                     </button>
+                      </button>
+                      
+                      {/* ✅ DISASTER BUTTON (Retained from HEAD) */}
+                      <Link href="/admin/disaster">
+                        <button className="bg-red-900/30 hover:bg-red-600 border border-red-800 text-red-200 px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)] flex items-center gap-2">
+                            <span>⚠️ EMERGENCY</span>
+                        </button>
+                      </Link>
                 </div>
             </div>
 
