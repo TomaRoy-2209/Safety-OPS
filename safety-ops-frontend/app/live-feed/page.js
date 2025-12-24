@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; // <--- IMPORT ROUTER
+import { useRouter } from 'next/navigation'; 
 import DashboardLayout from '../components/DashboardLayout';
 import IntelViewer from '../components/IntelViewer';
 
 export default function LiveFeedPage() {
-    const router = useRouter(); // <--- INITIALIZE ROUTER
+    const router = useRouter(); 
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedIncident, setSelectedIncident] = useState(null);
@@ -23,7 +23,7 @@ export default function LiveFeedPage() {
         // 1. GET TOKEN
         const token = localStorage.getItem('jwt');
         
-        // 2. IF NO TOKEN, STOP & REDIRECT (Fixes the 401 crash)
+        // 2. IF NO TOKEN, STOP & REDIRECT
         if (!token) {
             router.push('/login');
             return;
@@ -34,8 +34,15 @@ export default function LiveFeedPage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            const newData = Array.isArray(res.data) ? res.data : res.data.data;
-            
+            // 🛡️ DATA FINDER (Same as Admin Dashboard)
+            const raw = res.data;
+            const newData = 
+                Array.isArray(raw) ? raw :                 
+                (Array.isArray(raw.data) ? raw.data :      
+                (Array.isArray(raw.incidents) ? raw.incidents : 
+                []));                                      
+
+            // Alert logic (Play sound if list grows)
             if (prevCountRef.current > 0 && newData.length > prevCountRef.current) {
                 setAlert("⚠️ NEW INCIDENT DETECTED");
                 playAlertSound();
@@ -44,16 +51,18 @@ export default function LiveFeedPage() {
 
             prevCountRef.current = newData.length;
             setIncidents(newData);
-            setLoading(false);
 
         } catch (error) {
             console.error("Live Feed Error", error);
-            // 3. HANDLE EXPIRED TOKEN (Force Logout)
+            // Handle Token Expiry
             if (error.response && error.response.status === 401) {
                 localStorage.removeItem('jwt');
                 localStorage.removeItem('role');
                 router.push('/login');
             }
+        } finally {
+            // ✅ CRITICAL FIX: This ensures loading ALWAYS turns off
+            setLoading(false);
         }
     };
 
@@ -68,7 +77,7 @@ export default function LiveFeedPage() {
         // Initial Fetch
         fetchLiveData();
 
-        // Polling Interval
+        // Polling Interval (Every 3 seconds)
         const intervalId = setInterval(fetchLiveData, 3000);
 
         return () => clearInterval(intervalId);
@@ -115,47 +124,53 @@ export default function LiveFeedPage() {
                     <div className="py-20 text-center text-blue-500 font-mono animate-pulse">DECRYPTING SIGNAL...</div>
                 ) : (
                     <div className="space-y-3">
-                        {incidents.map((incident, index) => (
-                            <div 
-                                key={incident.id} 
-                                className={`
-                                    relative p-5 rounded-xl border transition-all duration-300 flex justify-between items-start group
-                                    ${index === 0 ? 'bg-blue-900/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-[#0a0a0a] border-gray-800 hover:border-gray-600'}
-                                `}
-                            >
-                                {index === 0 && (
-                                    <span className="absolute -top-2 -left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg animate-pulse">
-                                        LATEST
-                                    </span>
-                                )}
-
-                                <div>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className="text-xs font-mono text-gray-500">#{incident.id}</span>
-                                        <h3 className="text-white font-bold text-lg group-hover:text-blue-400 transition-colors">{incident.title}</h3>
-                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
-                                            incident.status === 'pending' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
-                                            'bg-green-500/10 text-green-500 border-green-500/20'
-                                        }`}>
-                                            {incident.status}
-                                        </span>
-                                    </div>
-                                    <p className="text-gray-400 text-sm mb-3">{incident.description}</p>
-                                    <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
-                                        <span>{new Date(incident.created_at).toLocaleTimeString()}</span>
-                                        <span>LOC: {Number(incident.latitude).toFixed(4)}, {Number(incident.longitude).toFixed(4)}</span>
-                                    </div>
-                                </div>
-
-                                <button 
-                                    onClick={() => setSelectedIncident(incident)}
-                                    className="bg-[#111] hover:bg-blue-600 hover:text-white text-gray-400 border border-gray-700 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
+                        {Array.isArray(incidents) && incidents.length > 0 ? (
+                            incidents.map((incident, index) => (
+                                <div 
+                                    key={incident.id} 
+                                    className={`
+                                        relative p-5 rounded-xl border transition-all duration-300 flex justify-between items-start group
+                                        ${index === 0 ? 'bg-blue-900/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-[#0a0a0a] border-gray-800 hover:border-gray-600'}
+                                    `}
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    INTEL
-                                </button>
-                            </div>
-                        ))}
+                                    {index === 0 && (
+                                        <span className="absolute -top-2 -left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg animate-pulse">
+                                            LATEST
+                                        </span>
+                                    )}
+
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="text-xs font-mono text-gray-500">#{incident.id}</span>
+                                            <h3 className="text-white font-bold text-lg group-hover:text-blue-400 transition-colors">{incident.title}</h3>
+                                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
+                                                incident.status === 'pending' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                                                'bg-green-500/10 text-green-500 border-green-500/20'
+                                            }`}>
+                                                {incident.status}
+                                            </span>
+                                        </div>
+                                        <p className="text-gray-400 text-sm mb-3">{incident.description}</p>
+                                        <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
+                                            <span>{new Date(incident.created_at).toLocaleTimeString()}</span>
+                                            <span>LOC: {Number(incident.latitude).toFixed(4)}, {Number(incident.longitude).toFixed(4)}</span>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => setSelectedIncident(incident)}
+                                        className="bg-[#111] hover:bg-blue-600 hover:text-white text-gray-400 border border-gray-700 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        INTEL
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                             <div className="py-10 text-center text-gray-500 border border-dashed border-gray-800 rounded-lg">
+                                 NO ACTIVE SIGNALS DETECTED
+                             </div>
+                        )}
                     </div>
                 )}
             </div>

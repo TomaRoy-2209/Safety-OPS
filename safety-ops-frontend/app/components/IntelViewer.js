@@ -3,16 +3,17 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import axios from 'axios'; 
 import LiveChat from './LiveChat';
+import AiSummarizer from './AiSummarizer'; // 👈 1. IMPORT ADDED
 
 export default function IntelViewer({ incident, onClose }) {
   const [mounted, setMounted] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // 1. Store who is looking at this
+  const [currentUser, setCurrentUser] = useState(null); 
 
   useEffect(() => {
     setMounted(true);
     console.log("INTEL VIEWER DATA:", incident);
 
-    // 2. Fetch the Current User (Required for Chat to know who sent the message)
+    // Fetch the Current User (Required for Chat)
     const fetchUser = async () => {
         try {
             const token = localStorage.getItem('jwt');
@@ -53,10 +54,13 @@ export default function IntelViewer({ incident, onClose }) {
         {/* Content Scroll Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
             
-            {/* Description */}
+            {/* Description Section */}
             <div className="bg-blue-900/10 border-l-2 border-blue-500 p-4 rounded-r">
                 <h3 className="text-xs font-bold text-gray-400 uppercase mb-1">Sitrep</h3>
-                <p className="text-gray-200 leading-relaxed">{incident.description}</p>
+                <p className="text-gray-200 leading-relaxed mb-4">{incident.description}</p>
+                
+                {/* 👇👇👇 2. AI BUTTON PLACED HERE 👇👇👇 */}
+                <AiSummarizer incidentId={incident.id} />
             </div>
 
             {/* EVIDENCE GRID */}
@@ -103,7 +107,7 @@ export default function IntelViewer({ incident, onClose }) {
                 )}
             </div>
 
-            {/* --- 3. LIVE CHAT SECTION (NEW) --- */}
+            {/* LIVE CHAT SECTION */}
             <div className="border-t border-gray-800 pt-6">
                 <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>

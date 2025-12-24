@@ -4,10 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\IncidentController;
 use App\Http\Controllers\API\AdminController;
-use App\Http\Controllers\API\ChatController;       // From Main
-use App\Http\Controllers\API\ReportController;     // From Main
-use App\Http\Controllers\API\RiskAssessmentController; // From Tarin's Feature
-
+use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\ReportController;
+use App\Http\Controllers\API\RiskAssessmentController;
+use App\Http\Controllers\API\SummarizeController; 
 
 // --- 1. PUBLIC ROUTES (No Login Required) ---
 Route::prefix('auth')->group(function () {
@@ -15,12 +15,10 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 });
 
-// Map Data (Publicly accessible for the landing page map)
+// Map Data
 Route::get('/incidents/all', [IncidentController::class, 'getAll']);
 
-
 // --- 2. PROTECTED ROUTES (Login Required) ---
-// Everything inside here requires a valid Token (JWT)
 Route::middleware('auth:api')->group(function () {
 
     // --- Auth Management ---
@@ -30,7 +28,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('profile', [AuthController::class, 'profile']);
     });
 
-    // --- TARIN'S NEW FEATURE: RISK SCORING ---
+    // --- TARIN'S FEATURE ---
     Route::get('/analytics/risk-assessment', [RiskAssessmentController::class, 'getRiskAnalysis']);
 
     // --- CHAT & REPORTS ---
@@ -39,25 +37,20 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/reports/generate', [ReportController::class, 'generate']);
 
     // --- CITIZEN FEATURES ---
-    // Create a new report
     Route::post('/incidents', [IncidentController::class, 'store']);
-    // Upload evidence to a specific report
     Route::post('/incidents/{id}/upload', [IncidentController::class, 'uploadEvidence']);
-    // View ONLY my own reports (Uses 'myReports' method we created)
     Route::get('/my-reports', [IncidentController::class, 'myReports']);
 
-
-    // --- RESPONDER / ADMIN FEATURES (Live Feed) ---
-    // View ALL reports with Evidence (Uses 'index' method)
+    // --- RESPONDER / ADMIN FEATURES ---
     Route::get('/incidents', [IncidentController::class, 'index']);
 
-
     // --- ADMIN ONLY CONTROLS ---
-    // Dispatch/Assign a unit
     Route::post('/incidents/{id}/assign', [IncidentController::class, 'assign']);
-    
-    // User Management
     Route::get('/admin/users', [AdminController::class, 'index']);
     Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
     Route::post('/admin/users', [AdminController::class, 'createUser']);
+    
+    // ✅ TOMA'S AI FEATURE (This will work now because we imported it at the top)
+    Route::post('/incidents/{id}/summarize', [SummarizeController::class, 'generateSummary']);
+
 });

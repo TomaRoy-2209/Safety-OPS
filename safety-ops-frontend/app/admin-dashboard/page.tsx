@@ -8,8 +8,10 @@ import IntelViewer from "../components/IntelViewer";
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  // Default stats to avoid "undefined" errors
+  
+  // Default stats to avoid "undefined" errors on first render
   const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, resolved: 0 });
+  
   const [recentIncidents, setRecentIncidents] = useState([]);
   const [selectedIncident, setSelectedIncident] = useState(null); 
   const [loading, setLoading] = useState(true);
@@ -28,21 +30,23 @@ export default function AdminDashboard() {
 
     const fetchData = async () => {
         try {
-            // 3. Request Config with Explicit Headers
             const config = {
                 headers: { Authorization: `Bearer ${token}` }
             };
 
-            // 4. Fetch Data (Sequential is safer for debugging than Promise.all if one fails)
+            // 3. Fetch Data (Profile + Incidents)
             const profileReq = await axios.get("http://localhost:1801/api/auth/profile", config);
             const incidentsReq = await axios.get("http://localhost:1801/api/incidents", config);
 
-            // 5. Process User
+            // Process User
             setUser(profileReq.data.user || profileReq.data);
 
-            // 6. Process Incidents
-            const allIncidents = Array.isArray(incidentsReq.data) ? incidentsReq.data : incidentsReq.data.data;
-            
+            // 🚨 CRASH FIX IS HERE 🚨
+            // We check: Is it an array? OR Is it inside .data? OR default to []
+            const raw = incidentsReq.data;
+            const allIncidents = Array.isArray(raw) ? raw : (raw.data || []);
+
+            // 4. Calculate Stats (Safe now because allIncidents is definitely an array)
             setStats({
                 total: allIncidents.length,
                 pending: allIncidents.filter(i => i.status === 'pending').length,
@@ -50,18 +54,18 @@ export default function AdminDashboard() {
                 resolved: allIncidents.filter(i => i.status === 'resolved').length,
             });
 
+            // 5. Update Recent Activity List
             setRecentIncidents(allIncidents.slice(0, 4));
             setLoading(false);
 
         } catch (error) {
             console.error("Dashboard Load Error:", error);
             
-            // --- CRITICAL FIX: Force Logout on 401 ---
+            // Handle Session Expiry (Force Logout)
             if (error.response && error.response.status === 401) {
-                alert("Session Expired. Please login again.");
                 localStorage.removeItem('jwt');
                 localStorage.removeItem('role');
-                window.location.href = '/login'; // Hard reload is safer than router.push here
+                router.push('/login');
             }
             setLoading(false);
         }
@@ -79,6 +83,7 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout title="COMMAND OVERVIEW">
       
+      {/* The IntelViewer (Pop-up) */}
       {selectedIncident && (
         <IntelViewer 
             incident={selectedIncident} 

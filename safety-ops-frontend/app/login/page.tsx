@@ -12,47 +12,64 @@ export default function LoginPage() {
     const [error, setError] = useState('');
 
     const handleLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-        try {
-            // 1. Send Login Request
-            const res = await axios.post('http://127.0.0.1:1801/api/auth/login', {
-                email,
-                password
-            });
+    try {
+      const res = await axios.post("http://localhost:1801/api/auth/login", {
+        email,
+        password,
+      });
 
-            // 2. Save Credentials
-            const { access_token, user } = res.data;
-            localStorage.setItem('jwt', access_token);
-            localStorage.setItem('role', user.role);
-            if (user.unit) localStorage.setItem('unit', user.unit); // Save Unit for easy access
+      // 🔍 DEBUG: Check exactly what the backend sends
+      console.log("🔐 LOGIN RESPONSE STRUCTURE:", res.data);
 
-            // 3. SMART REDIRECT LOGIC
-            switch(user.role) {
-                case 'admin':
-                    router.push('/admin-dashboard');
-                    break;
-                case 'responder':
-                    router.push('/responder-dashboard'); // Desk Dispatcher
-                    break;
-                case 'worker':
-                    router.push('/worker-dashboard');    // Field Unit (Police/Fire)
-                    break;
-                case 'citizen':
-                default:
-                    router.push('/dashboard');           // Regular User
-                    break;
-            }
+      // 🛡️ SAFETY CHECK: Find the data wherever it is hiding
+      // Some backends send { access_token: ... }, others send { token: ... }
+      const token = res.data.access_token || res.data.token;
+      
+      // Some backends send { user: ... }, others send { data: { user: ... } }
+      const user = res.data.user || (res.data.data ? res.data.data.user : null);
 
-        } catch (err) {
-            console.error(err);
-            setError('Invalid Credentials or Server Error');
-        } finally {
-            setLoading(false);
-        }
-    };
+      if (!token || !user) {
+         console.error("❌ Login succeeded but data is missing!", res.data);
+         setError("Login Error: Server response format invalid.");
+         setLoading(false);
+         return;
+      }
+
+      // Save to Storage
+      localStorage.setItem("jwt", token);
+      
+      // ✅ Now this line won't crash because we checked 'user' exists above
+      localStorage.setItem("role", user.role); 
+      
+      if (user.unit) {
+          localStorage.setItem("unit", user.unit);
+      }
+
+      // 3. SMART REDIRECT LOGIC
+      // If user is admin -> Go to Admin Dashboard
+      if (user.role === 'admin') {
+        router.push('/admin-dashboard');
+      } 
+      // If user is responder -> Go to Dispatch
+      else if (user.role === 'responder') {
+        router.push('/dispatch');
+      }
+      // If user is citizen -> Go to My Reports
+      else {
+        router.push('/my-reports');
+      }
+
+    } catch (err) {
+      console.error("Login Failed", err);
+      setError("Invalid credentials. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
     return (
         <main className="h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden">
