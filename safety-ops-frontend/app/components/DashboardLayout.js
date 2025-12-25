@@ -39,6 +39,10 @@ export default function DashboardLayout({ children, title }) {
 
         // --- CITIZEN ---
         { label: 'New Report', href: '/report', icon: '🚨', roles: ['citizen', 'responder', 'admin'] },
+        { label: 'Maintenance', href: '/maintenance', icon: '🛠️', roles: ['citizen', 'admin', 'worker'] },
+        { label: 'Maintenance Log', href: '/admin/maintenance', icon: '📋', roles: ['admin'] },
+
+
 
         // --- COMMAND CENTER ---
         { label: 'Dispatch Control', href: '/dispatch', icon: '🚓', roles: ['admin', 'responder'] },
@@ -46,12 +50,11 @@ export default function DashboardLayout({ children, title }) {
         { label: 'Tactical Map', href: '/map', icon: '🗺️', roles: ['admin', 'responder'] },
 
         // --- ADMIN ONLY ---
-        // ADDED TARIN'S FEATURE HERE:
-        { label: 'Predictive Risk', href: '/admin/risk-assessment', icon: '📉', roles: ['admin'] }, 
-        
         { label: 'User Database', href: '/admin/users', icon: '👥', roles: ['admin'] },
         { label: 'Access Control', href: '/admin/access-control', icon: '🔑', roles: ['admin'] },
+
         { label: 'Export Reports', href: '/admin/reports', icon: '📂', roles: ['admin'] },
+
     ];
 
     if (!role) return null;

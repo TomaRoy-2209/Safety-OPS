@@ -58,5 +58,12 @@ Route::middleware('auth:api')->group(function () {
     
     // --- TOMA'S AI FEATURE (Your New Feature) ---
     Route::post('/incidents/{id}/summarize', [SummarizeController::class, 'generateSummary']);
+    // --- TARIN'S MAINTENANCE FEATURE ---
+Route::post('/maintenance/tickets', [App\Http\Controllers\API\MaintenanceController::class, 'store']);
+Route::get('/maintenance/my-tickets', [App\Http\Controllers\API\MaintenanceController::class, 'myTickets']);
+Route::get('/admin/maintenance/all', [App\Http\Controllers\API\MaintenanceController::class, 'index']);
+Route::put('/admin/maintenance/{id}', [App\Http\Controllers\API\MaintenanceController::class, 'updateStatus']);
+
+
 
 });

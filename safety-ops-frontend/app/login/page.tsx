@@ -60,7 +60,7 @@ export default function LoginPage() {
       }
       // If user is citizen -> Go to My Reports
       else {
-        router.push('/my-reports');
+        router.push('/dashboard');
       }
 
     } catch (err) {
