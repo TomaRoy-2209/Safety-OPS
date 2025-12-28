@@ -26,8 +26,11 @@ export default function RegisterPage() {
     setSuccess("");
     setLoading(true);
 
+    // 👇 FIX: Use Environment Variable
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1801";
+
     try {
-        const res = await fetch("http://localhost:1801/api/auth/register", {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

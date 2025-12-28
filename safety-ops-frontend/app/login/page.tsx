@@ -12,65 +12,64 @@ export default function LoginPage() {
     const [error, setError] = useState('');
 
     const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-    try {
-      const res = await axios.post('http://localhost:1801/api/auth/login', {
-        email,
-        password
-      });
+        // 👇 FIX: Use the Environment Variable for the URL
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
-      // 1. Save Token & Role
-      localStorage.setItem('jwt', res.data.token);
-      localStorage.setItem('role', res.data.user.role);
-      localStorage.setItem('user_id', res.data.user.id); // Optional, good for debugging
+        try {
+            const res = await axios.post(`${API_URL}/api/auth/login`, {
+                email,
+                password
+            });
 
-      // 2. Redirect based on Role
-      const role = res.data.user.role;
+            // 1. Save Token & Role
+            localStorage.setItem('jwt', res.data.token);
+            localStorage.setItem('role', res.data.user.role);
+            localStorage.setItem('user_id', res.data.user.id);
 
-      if (role === 'admin') {
-        router.push('/admin-dashboard');
-      } 
-      else if (role === 'responder') {
-        router.push('/worker-dashboard'); // ✅ Responders go here
-      } 
-      else if (role === 'worker') {
-        router.push('/worker-dashboard'); // ✅ ADD THIS: Workers go here too!
-      } 
-      else {
-        router.push('/dashboard'); // Citizens
-      }
+            // 2. Redirect based on Role
+            const role = res.data.user.role;
 
-    } catch (err) {
-      console.error(err);
-      setError('Invalid credentials. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+            if (role === 'admin') {
+                router.push('/admin-dashboard');
+            } 
+            else if (role === 'responder') {
+                router.push('/worker-dashboard');
+            } 
+            else if (role === 'worker') {
+                router.push('/worker-dashboard');
+            } 
+            else {
+                router.push('/dashboard');
+            }
+
+        } catch (err) {
+            console.error(err);
+            setError('Invalid credentials. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         // --- MAIN CONTAINER ---
         <main className="min-h-screen flex flex-col items-center justify-center bg-[#020617] relative overflow-hidden isolate">
             
-            {/* 1. Digital Grid Overlay (Base Layer) */}
+            {/* 1. Digital Grid Overlay */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)] -z-30 pointer-events-none"></div>
 
             {/* 2. SONAR SCAN EFFECT CONTAINER */}
             <div className="absolute inset-0 flex items-center justify-center -z-20 pointer-events-none overflow-hidden">
-                {/* A. Static Concentric Rings */}
                 <div className="absolute border border-blue-500/30 h-[20rem] w-[20rem] rounded-full"></div>
                 <div className="absolute border border-blue-500/20 h-[40rem] w-[40rem] rounded-full"></div>
                 <div className="absolute border border-blue-500/10 h-[60rem] w-[60rem] rounded-full"></div>
                 <div className="absolute border border-blue-900/30 h-[80rem] w-[80rem] rounded-full"></div>
-                {/* B. The Sweeping Scanner Arm */}
                 <div className="absolute h-[150vmax] w-[150vmax] animate-[spin_4s_linear_infinite]">
                     <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(59,130,246,0.5)_0deg,rgba(59,130,246,0.1)_15deg,transparent_60deg)]"></div>
                 </div>
-
-                {/* C. Central "Ping" Pulse */}
                 <div className="absolute h-4 w-4 bg-blue-500 rounded-full animate-ping opacity-75"></div>
                 <div className="absolute h-[30rem] w-[30rem] bg-blue-900/30 blur-[100px] rounded-full"></div>
             </div>
@@ -81,7 +80,6 @@ export default function LoginPage() {
                     
                     {/* Header */}
                     <div className="bg-[#111]/50 p-6 text-center border-b border-gray-800/50 relative overflow-hidden">
-                        {/* Subtle scanner line in header */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite]"></div>
                         <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20 relative z-10">
                             <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
