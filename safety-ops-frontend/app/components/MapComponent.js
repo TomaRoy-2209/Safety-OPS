@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import dynamic from 'next/dynamic'; // 👈 REQUIRED for Maps on Vercel
-import DashboardLayout from '../../components/DashboardLayout';
+import DashboardLayout from '../components/DashboardLayout';
 
 // 🚨 CRITICAL DEPLOYMENT FIX:
 // Maps must be imported dynamically with ssr: false, or Vercel build will FAIL.
