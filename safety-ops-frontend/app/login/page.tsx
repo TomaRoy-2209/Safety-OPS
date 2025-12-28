@@ -14,126 +14,144 @@ export default function LoginPage() {
     const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const res = await axios.post("http://localhost:1801/api/auth/login", {
+      const res = await axios.post('http://localhost:1801/api/auth/login', {
         email,
-        password,
+        password
       });
 
-      // 🔍 DEBUG: Check exactly what the backend sends
-      console.log("🔐 LOGIN RESPONSE STRUCTURE:", res.data);
+      // 1. Save Token & Role
+      localStorage.setItem('jwt', res.data.token);
+      localStorage.setItem('role', res.data.user.role);
+      localStorage.setItem('user_id', res.data.user.id); // Optional, good for debugging
 
-      // 🛡️ SAFETY CHECK: Find the data wherever it is hiding
-      // Some backends send { access_token: ... }, others send { token: ... }
-      const token = res.data.access_token || res.data.token;
-      
-      // Some backends send { user: ... }, others send { data: { user: ... } }
-      const user = res.data.user || (res.data.data ? res.data.data.user : null);
+      // 2. Redirect based on Role
+      const role = res.data.user.role;
 
-      if (!token || !user) {
-         console.error("❌ Login succeeded but data is missing!", res.data);
-         setError("Login Error: Server response format invalid.");
-         setLoading(false);
-         return;
-      }
-
-      // Save to Storage
-      localStorage.setItem("jwt", token);
-      
-      // ✅ Now this line won't crash because we checked 'user' exists above
-      localStorage.setItem("role", user.role); 
-      
-      if (user.unit) {
-          localStorage.setItem("unit", user.unit);
-      }
-
-      // 3. SMART REDIRECT LOGIC
-      // If user is admin -> Go to Admin Dashboard
-      if (user.role === 'admin') {
+      if (role === 'admin') {
         router.push('/admin-dashboard');
       } 
-      // If user is responder -> Go to Dispatch
-      else if (user.role === 'responder') {
-        router.push('/dispatch');
-      }
-      // If user is citizen -> Go to My Reports
+      else if (role === 'responder') {
+        router.push('/worker-dashboard'); // ✅ Responders go here
+      } 
+      else if (role === 'worker') {
+        router.push('/worker-dashboard'); // ✅ ADD THIS: Workers go here too!
+      } 
       else {
-        router.push('/dashboard');
+        router.push('/dashboard'); // Citizens
       }
 
     } catch (err) {
-      console.error("Login Failed", err);
-      setError("Invalid credentials. Please try again.");
+      console.error(err);
+      setError('Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
     return (
-        <main className="h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden">
+        // --- MAIN CONTAINER ---
+        <main className="min-h-screen flex flex-col items-center justify-center bg-[#020617] relative overflow-hidden isolate">
             
-            {/* Background Effects */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20 pointer-events-none"></div>
+            {/* 1. Digital Grid Overlay (Base Layer) */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)] -z-30 pointer-events-none"></div>
 
-            <div className="w-full max-w-md p-8 bg-[#0a0a0a] border border-gray-800 rounded-2xl shadow-2xl relative z-10">
-                
-                <div className="text-center mb-8">
-                    <div className="w-12 h-12 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center border border-blue-600/30 mx-auto mb-4">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    </div>
-                    <h1 className="text-2xl font-bold text-white tracking-wide">
-                        SAFETY<span className="text-blue-500">OPS</span>
-                    </h1>
-                    <p className="text-gray-500 text-sm mt-2">Secure Command Uplink</p>
+            {/* 2. SONAR SCAN EFFECT CONTAINER */}
+            <div className="absolute inset-0 flex items-center justify-center -z-20 pointer-events-none overflow-hidden">
+                {/* A. Static Concentric Rings */}
+                <div className="absolute border border-blue-500/30 h-[20rem] w-[20rem] rounded-full"></div>
+                <div className="absolute border border-blue-500/20 h-[40rem] w-[40rem] rounded-full"></div>
+                <div className="absolute border border-blue-500/10 h-[60rem] w-[60rem] rounded-full"></div>
+                <div className="absolute border border-blue-900/30 h-[80rem] w-[80rem] rounded-full"></div>
+                {/* B. The Sweeping Scanner Arm */}
+                <div className="absolute h-[150vmax] w-[150vmax] animate-[spin_4s_linear_infinite]">
+                    <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(59,130,246,0.5)_0deg,rgba(59,130,246,0.1)_15deg,transparent_60deg)]"></div>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                {/* C. Central "Ping" Pulse */}
+                <div className="absolute h-4 w-4 bg-blue-500 rounded-full animate-ping opacity-75"></div>
+                <div className="absolute h-[30rem] w-[30rem] bg-blue-900/30 blur-[100px] rounded-full"></div>
+            </div>
+            
+            {/* --- FORM CONTAINER --- */}
+            <div className="w-full max-w-md p-1 z-10">
+                <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-gray-800/50 rounded-xl shadow-2xl overflow-hidden relative">
                     
-                    {error && (
-                        <div className="p-3 bg-red-900/20 border border-red-500/50 rounded text-red-500 text-xs font-bold text-center">
-                            {error}
+                    {/* Header */}
+                    <div className="bg-[#111]/50 p-6 text-center border-b border-gray-800/50 relative overflow-hidden">
+                        {/* Subtle scanner line in header */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite]"></div>
+                        <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20 relative z-10">
+                            <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         </div>
-                    )}
-
-                    <div>
-                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1 ml-1">Identity (Email)</label>
-                        <input 
-                            type="email" 
-                            required
-                            className="w-full bg-[#111] border border-gray-800 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                            placeholder="officer@safetyops.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                        <h2 className="text-2xl font-bold text-white tracking-wide drop-shadow-lg relative z-10">SECURE LOGIN</h2>
+                        <p className="text-gray-400 text-xs uppercase tracking-widest mt-1 relative z-10">SafeCity Operations Network</p>
                     </div>
 
-                    <div>
-                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1 ml-1">Access Key (Password)</label>
-                        <input 
-                            type="password" 
-                            required
-                            className="w-full bg-[#111] border border-gray-800 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
+                    {/* Form */}
+                    <form onSubmit={handleLogin} className="p-8 space-y-5">
+                        
+                        {/* Email Input */}
+                        <div>
+                            <label className="block text-xs font-bold text-blue-400 uppercase mb-2 ml-1">Identity (Email)</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="officer@safecity.com"
+                                className="w-full bg-black/50 border border-gray-700 text-white rounded-lg p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-gray-600"
+                                required
+                            />
+                        </div>
 
-                    <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-900/20 transition-all transform active:scale-95"
-                    >
-                        {loading ? 'AUTHENTICATING...' : 'INITIATE SESSION'}
-                    </button>
-                </form>
+                        {/* Password Input */}
+                        <div>
+                            <label className="block text-xs font-bold text-blue-400 uppercase mb-2 ml-1">Access Key (Password)</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-full bg-black/50 border border-gray-700 text-white rounded-lg p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-gray-600"
+                                required
+                            />
+                        </div>
 
-                <div className="mt-6 text-center">
-                    <p className="text-gray-600 text-xs">
-                        Don't have clearance? <Link href="/register" className="text-blue-500 hover:text-blue-400 font-bold">Register Citizen ID</Link>
-                    </p>
+                        {/* Submit Button */}
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-2 mt-4 relative overflow-hidden group"
+                        >
+                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                             <div className="relative flex items-center justify-center gap-2">
+                                {loading ? (
+                                    <>
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                    <span>AUTHENTICATING...</span>
+                                    </>
+                                ) : (
+                                    "INITIATE SESSION"
+                                )}
+                            </div>
+                        </button>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="p-3 bg-red-900/20 border border-red-500/50 rounded flex items-center gap-2 text-red-400 text-sm animate-pulse">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Footer Link */}
+                        <p className="text-center text-gray-500 text-sm pt-4 border-t border-gray-800/50">
+                            No Clearance? <Link href="/register" className="text-blue-400 hover:text-blue-300 font-bold ml-1 hover:underline transition-colors">Register Citizen ID</Link>
+                        </p>
+
+                    </form>
                 </div>
             </div>
         </main>

@@ -22,10 +22,11 @@ class User extends Authenticatable implements JWTSubject // <--- IMPORTANT IMPLE
         'email',
         'password',
         'role',
-        'agency', // Ensure these are here
+        'agency', 
         'unit',
         'phone', 
-        'fcm_token',  // Ensure these are here
+        'fcm_token',
+        'is_approved', 
     ];
 
     /**

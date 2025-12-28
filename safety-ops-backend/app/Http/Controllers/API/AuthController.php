@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth; // <--- FIXED IMPORT
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
@@ -19,20 +19,44 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'sometimes|string|in:citizen,admin,responder,worker', // Added 'worker' here just in case
+            'role' => 'sometimes|string|in:citizen,admin,responder,worker',
             'phone' => 'nullable|string|min:11',
+            'admin_secret' => 'nullable|string' // We use this field for both Admin Key and Dept Code
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
+        // 🔒 1. SECURITY CHECK: ADMIN
+        if ($request->role === 'admin') {
+            if ($request->admin_secret !== env('ADMIN_SECRET_KEY')) {
+                return response()->json(['error' => 'Security Violation: Invalid Admin Secret Key.'], 403);
+            }
+        }
+
+        // 🔒 2. SECURITY CHECK: RESPONDER (The Fix)
+        // If they want to be Police/Fire, they must provide the Responder Code
+        if ($request->role === 'responder') {
+            if ($request->admin_secret !== env('RESPONDER_SECRET_KEY')) {
+                 return response()->json(['error' => 'Verification Failed: Invalid Department/Badge Code.'], 403);
+            }
+        }
+
+        // 🔒 3. BLOCK ONLY WORKERS (Municipality workers usually assigned by City Corp)
+        // You can unlock this too if you want, but usually, these are manual.
+        if ($request->role === 'worker') {
+             return response()->json(['error' => 'Municipality Workers must be registered by the System Admin.'], 403);
+        }
+
+        // Create the user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role ?? 'citizen',
             'phone' => $request->phone,
+            'is_approved' => true // ✅ Auto-approve if they passed the code check
         ]);
 
         $token = JWTAuth::fromUser($user);
@@ -49,30 +73,32 @@ class AuthController extends Controller
         try {
             $credentials = $request->only('email', 'password');
 
-            // Debug Point 1: Check if JWT Auth is loaded
-            if (!method_exists(auth('api'), 'attempt')) {
-                throw new \Exception("JWT Driver not found. Check config/auth.php guards.");
-            }
-
+            // 1. Attempt to generate token
             if (!$token = auth('api')->attempt($credentials)) {
                 return response()->json(['error' => 'Unauthorized - Invalid Credentials'], 401);
             }
 
+            // 2. Get the Authenticated User
+            $user = auth('api')->user();
+
+            // 3. 🛡️ CHECK APPROVAL STATUS
+            if ($user->is_approved == 0) {
+                auth('api')->logout(); 
+                return response()->json(['error' => 'Account is pending approval from Admin.'], 403);
+            }
+
+            // 4. Return Response
             return response()->json([
-                'access_token' => $token,
+                'token' => $token,
                 'token_type' => 'bearer',
                 'expires_in' => auth('api')->factory()->getTTL() * 60,
-                'user' => auth('api')->user()
+                'user' => $user
             ]);
 
         } catch (\Throwable $e) {
-            // --- THIS IS THE MAGIC PART ---
-            // It sends the ACTUAL error back to your browser console
             return response()->json([
                 'error' => 'Login Crashed',
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
             ], 500);
         }
     }
@@ -91,15 +117,13 @@ class AuthController extends Controller
     // View Profile
     public function profile()
     {
-        // Explicitly use the 'api' guard
         return response()->json(auth('api')->user());
     }
 
     // Update Profile
     public function updateProfile(Request $request)
     {
-        // \Log::info($request->all()); // Uncomment for debugging
-        $user = auth('api')->user(); // Explicit guard here too
+        $user = auth('api')->user();
         
         $data = $request->only('name', 'password', 'password_confirmation');
         
@@ -136,12 +160,12 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unable to refresh token', 'details' => $e->getMessage()], 401);
         }
     }
+
+    // Update FCM Token
     public function updateFcmToken(Request $request)
     {
         $request->validate(['token' => 'required|string']);
 
-        // 🚨 CRITICAL FIX: Explicitly tell Laravel to use the 'api' guard (JWT)
-        // 'auth()->user()' might return null if the default guard is 'web'
         $user = auth('api')->user(); 
 
         if (!$user) {
@@ -153,6 +177,4 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Token updated successfully']);
     }
-
 }
-    

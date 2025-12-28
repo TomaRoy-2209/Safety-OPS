@@ -7,33 +7,6 @@ import RiskCard from "../../components/RiskCard";
 export default function RiskAssessmentPage() {
     const [zones, setZones] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    /*useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = localStorage.getItem('jwt');
-                const res = await axios.get('http://localhost:1801/api/analytics/risk-assessment', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const res = await axios.get(
-  "http://localhost:1801/api/auth/analytics/risk-assessment",
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    },
-  }
-);
-
-                setZones(res.data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);*/
     useEffect(() => {
         const fetchData = async () => {
             try {

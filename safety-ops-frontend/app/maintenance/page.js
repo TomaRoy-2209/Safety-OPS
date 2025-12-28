@@ -71,18 +71,80 @@ export default function MaintenancePage() {
                         </button>
                     </form>
                 </div>
-                {/* LIST */}
-                <div className="bg-[#0a0a0a] border border-gray-800 p-6 rounded-xl">
-                    <h2 className="text-xl font-bold text-white mb-4">My Reports</h2>
-                    <div className="space-y-3 h-96 overflow-auto">
-                        {tickets.map(t => (
-                            <div key={t.id} className="bg-[#111] p-4 rounded border border-gray-800">
-                                <h3 className="font-bold text-white">{t.title}</h3>
-                                <p className="text-gray-400 text-sm">{t.description}</p>
-                                <div className="mt-2 text-xs text-yellow-500 font-mono">STATUS: {t.status.toUpperCase()}</div>
-                            </div>
-                        ))}
-                    </div>
+                {/* THE LOG TABLE */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="bg-[#111] text-gray-200 uppercase font-bold text-xs">
+                            <tr>
+                                <th className="p-4">ID</th>
+                                <th className="p-4">Issue</th>
+                                <th className="p-4">Category</th>
+                                <th className="p-4">Location</th>
+                                <th className="p-4">Evidence</th> {/* ✅ NEW COLUMN */}
+                                <th className="p-4">Status</th>
+                                <th className="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                            {loading ? (
+                                <tr><td colSpan="7" className="p-8 text-center animate-pulse">LOADING LOG DATA...</td></tr>
+                            ) : tickets.length === 0 ? (
+                                <tr><td colSpan="7" className="p-8 text-center text-gray-600">Maintenance Log is Empty.</td></tr>
+                            ) : (
+                                tickets.map(ticket => (
+                                    <tr key={ticket.id} className="hover:bg-white/5 transition-colors">
+                                        <td className="p-4 font-mono text-gray-500">#{ticket.id}</td>
+                                        <td className="p-4">
+                                            <div className="font-bold text-white">{ticket.title}</div>
+                                            <div className="text-xs truncate max-w-[200px]">{ticket.description}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="px-2 py-1 rounded bg-gray-800 border border-gray-700 text-xs">
+                                                {ticket.category}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 font-mono text-xs">
+                                            {ticket.latitude ? `${Number(ticket.latitude).toFixed(4)}, ${Number(ticket.longitude).toFixed(4)}` : 'N/A'}
+                                        </td>
+                                        
+                                        {/* ✅ NEW: DISPLAY EVIDENCE IMAGE */}
+                                        <td className="p-4">
+                                            {ticket.image_path ? (
+                                                <a 
+                                                    href={`http://localhost:1801${ticket.image_path}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-400 hover:text-blue-300 text-xs font-bold underline flex items-center gap-1"
+                                                >
+                                                    <span>📷 View Photo</span>
+                                                </a>
+                                            ) : (
+                                                <span className="text-gray-600 text-xs">No Image</span>
+                                            )}
+                                        </td>
+
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded font-bold text-xs uppercase ${
+                                                ticket.status === 'resolved' ? 'bg-green-900/30 text-green-500' : 'bg-red-900/30 text-red-500'
+                                            }`}>
+                                                {ticket.status}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            {ticket.status !== 'resolved' && (
+                                                <button 
+                                                    onClick={() => updateStatus(ticket.id, 'resolved')}
+                                                    className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold transition-all"
+                                                >
+                                                    MARK FIXED
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </DashboardLayout>

@@ -20,12 +20,10 @@ export default function UserManagement() {
         }
 
         try {
-            // FIX: Keep the Main Branch version which includes Auth Headers
             const res = await axios.get('http://127.0.0.1:1801/api/admin/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            // Handle different response structures (array vs {data: [...]})
             const userData = Array.isArray(res.data) ? res.data : res.data.data || res.data.users;
             setUsers(userData);
             setLoading(false);
@@ -37,11 +35,17 @@ export default function UserManagement() {
         }
     };
 
+    // Color Logic (Yellow for Workers, Blue for Citizens)
     const getRoleColor = (role) => {
         switch(role) {
-            case 'admin': return 'bg-red-900/30 text-red-500 border-red-500/30';
-            case 'responder': return 'bg-emerald-900/30 text-emerald-500 border-emerald-500/30';
-            default: return 'bg-blue-900/30 text-blue-500 border-blue-500/30';
+            case 'admin': 
+                return 'bg-red-900/30 text-red-500 border-red-500/30';
+            case 'responder': 
+                return 'bg-emerald-900/30 text-emerald-500 border-emerald-500/30';
+            case 'worker': 
+                return 'bg-yellow-900/30 text-yellow-500 border-yellow-500/30'; 
+            default: 
+                return 'bg-blue-900/30 text-blue-500 border-blue-500/30';
         }
     };
 
@@ -66,9 +70,9 @@ export default function UserManagement() {
                 <div className="bg-[#0a0a0a] border border-gray-800 rounded-xl overflow-hidden shadow-xl">
                     
                     {/* Header */}
-                    <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-[#111]">
+                    <div className="p-6 border-b border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#111]">
                         <h3 className="text-white font-bold text-lg">Registered Personnel</h3>
-                        <button onClick={fetchUsers} className="text-xs text-blue-500 hover:text-white flex items-center gap-2">
+                        <button onClick={fetchUsers} className="w-full md:w-auto px-4 py-2 bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/30 rounded text-xs text-blue-400 font-bold flex items-center justify-center gap-2 transition-colors">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             REFRESH DATA
                         </button>
@@ -79,32 +83,68 @@ export default function UserManagement() {
                         {loading ? (
                             <div className="p-12 text-center text-blue-500 font-mono animate-pulse">DECRYPTING USER RECORDS...</div>
                         ) : error ? (
-                             <div className="p-12 text-center text-red-500 font-mono">{error}</div>
+                            <div className="p-12 text-center text-red-500 font-mono">{error}</div>
                         ) : (
-                            <table className="w-full text-left">
+                            <table className="w-full text-left whitespace-nowrap">
                                 <thead className="bg-[#050505] text-gray-500 text-[10px] uppercase font-bold tracking-wider">
                                     <tr>
-                                        <th className="p-4 border-b border-gray-800">ID</th>
+                                        {/* ID - Hidden on Mobile */}
+                                        <th className="p-4 border-b border-gray-800 hidden md:table-cell">ID</th>
+                                        
                                         <th className="p-4 border-b border-gray-800">Identity</th>
-                                        <th className="p-4 border-b border-gray-800">Email Contact</th>
+                                        
+                                        {/* NEW COLUMN: Unit Assignment (Hidden on Mobile) */}
+                                        <th className="p-4 border-b border-gray-800 hidden md:table-cell">Assignment</th>
+                                        
                                         <th className="p-4 border-b border-gray-800">Clearance Level</th>
-                                        <th className="p-4 border-b border-gray-800">Joined</th>
+                                        
+                                        {/* Date - Hidden on Mobile */}
+                                        <th className="p-4 border-b border-gray-800 hidden md:table-cell">Joined</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-800">
                                     {users.map((user) => (
                                         <tr key={user.id} className="hover:bg-white/5 transition-colors group">
-                                            <td className="p-4 font-mono text-gray-500 text-xs">#{user.id}</td>
+                                            
+                                            {/* ID (Desktop) */}
+                                            <td className="p-4 font-mono text-gray-500 text-xs hidden md:table-cell">#{user.id}</td>
+                                            
+                                            {/* Name + Mobile Info Stack */}
                                             <td className="p-4">
                                                 <div className="font-bold text-white text-sm group-hover:text-blue-400">{user.name}</div>
+                                                <div className="text-gray-500 text-xs font-mono">{user.email}</div>
+                                                
+                                                {/* MOBILE ONLY: Show Unit here since column is hidden */}
+                                                <div className="md:hidden mt-1">
+                                                    {user.unit ? (
+                                                        <span className="text-[10px] bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded border border-gray-700">
+                                                            {user.unit}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
                                             </td>
-                                            <td className="p-4 text-gray-400 text-sm font-mono">{user.email}</td>
+                                            
+                                            {/* Assignment (Desktop) */}
+                                            <td className="p-4 hidden md:table-cell">
+                                                {user.unit ? (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-white text-xs font-bold">{user.unit}</span>
+                                                        <span className="text-[10px] text-gray-500">{user.agency || 'N/A'}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-gray-600 text-xs">-</span>
+                                                )}
+                                            </td>
+                                            
+                                            {/* Role */}
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wider ${getRoleColor(user.role)}`}>
                                                     {user.role}
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-gray-500 text-xs">
+                                            
+                                            {/* Date (Desktop) */}
+                                            <td className="p-4 text-gray-500 text-xs hidden md:table-cell">
                                                 {new Date(user.created_at).toLocaleDateString()}
                                             </td>
                                         </tr>

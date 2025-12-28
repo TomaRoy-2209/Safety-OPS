@@ -5,13 +5,13 @@ import axios from 'axios';
 import DashboardLayout from "../components/DashboardLayout";
 import IntelViewer from "../components/IntelViewer";
 import Link from 'next/link'; 
-import { requestForToken, onMessageListener } from '../../firebase'; // ✅ Import Firebase
+import { requestForToken } from '../../firebase'; // Removed onMessageListener if not used here to prevent double alerts
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   
-  // Default stats to avoid "undefined" errors on first render
+  // Default stats
   const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, resolved: 0 });
   
   const [recentIncidents, setRecentIncidents] = useState([]);
@@ -42,12 +42,11 @@ export default function AdminDashboard() {
             // Process User
             setUser(profileReq.data.user || profileReq.data);
 
-            // 🚨 CRASH FIX (Retained from HEAD)
-            // We check: Is it an array? OR Is it inside .data? OR default to []
+            // Robust Data Handling
             const raw = incidentsReq.data;
             const allIncidents = Array.isArray(raw) ? raw : (raw.data || []);
 
-            // 4. Calculate Stats (Safe now because allIncidents is definitely an array)
+            // 4. Calculate Stats
             setStats({
                 total: allIncidents.length,
                 pending: allIncidents.filter(i => i.status === 'pending').length,
@@ -61,19 +60,14 @@ export default function AdminDashboard() {
 
         } catch (error) {
             console.error("Dashboard Load Error:", error);
-            
-            // Handle Session Expiry (Force Logout)
             if (error.response && error.response.status === 401) {
-                localStorage.removeItem('jwt');
-                localStorage.removeItem('role');
+                localStorage.clear();
                 router.push('/login');
             }
             setLoading(false);
         }
     };
 
-    // ✅ 3. TOKEN SYNC LOGIC
-    // This runs in the background to ensure 'fcm_token' is filled in the DB
     const syncToken = async () => {
         if (typeof window !== 'undefined') {
             try {
@@ -86,7 +80,7 @@ export default function AdminDashboard() {
     };
 
     fetchData();
-    syncToken(); // <--- Execute Sync
+    syncToken();
 
   }, [router]);
 
@@ -99,7 +93,7 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout title="COMMAND OVERVIEW">
       
-      {/* The IntelViewer (Pop-up) */}
+      {/* IntelViewer Pop-up */}
       {selectedIncident && (
         <IntelViewer 
             incident={selectedIncident} 
@@ -109,7 +103,7 @@ export default function AdminDashboard() {
 
       <div className="space-y-8">
         
-        {/* STATS ROW */}
+        {/* STATS ROW (Grid handles mobile automatically) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-[#0a0a0a] border border-gray-800 p-4 rounded-xl flex flex-col items-center justify-center shadow-lg">
                 <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Total Signals</span>
@@ -133,32 +127,32 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* Left: Welcome Panel */}
-            <div className="lg:col-span-2 bg-[#0a0a0a]/80 backdrop-blur-md border border-gray-800 rounded-xl p-8 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <div className="lg:col-span-2 bg-[#0a0a0a]/80 backdrop-blur-md border border-gray-800 rounded-xl p-6 md:p-8 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
                     <svg className="w-40 h-40 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Welcome back, {user?.name}</h2>
-                <p className="text-gray-400 mb-6 max-w-lg leading-relaxed">
+                
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Welcome back, {user?.name}</h2>
+                <p className="text-gray-400 mb-6 max-w-lg leading-relaxed text-sm md:text-base">
                     System integrity is optimal. You have <span className="text-white font-bold">{stats.pending} pending incidents</span> requiring immediate review and dispatch assignment.
                 </p>
-                <div className="flex gap-4 relative z-10">
-                      <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
+                
+                {/* 📱 MOBILE FIX: Flex-col on small screens, Row on large */}
+                <div className="flex flex-col sm:flex-row gap-4 relative z-10">
+                      <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 md:py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
                         <span>GO TO DISPATCH</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                       </button>
-                      <button onClick={() => router.push('/map')} className="bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 text-gray-300 px-6 py-2 rounded-lg font-bold text-sm transition-all">
+                      
+                      <button onClick={() => router.push('/map')} className="bg-[#1a1a1a] hover:bg-[#222] border border-gray-700 text-gray-300 px-6 py-3 md:py-2 rounded-lg font-bold text-sm transition-all text-center">
                         VIEW LIVE MAP
                       </button>
                       
-                      {/* ✅ DISASTER BUTTON (Retained from HEAD) */}
-                      <Link href="/admin/disaster">
-                        <button className="bg-red-900/30 hover:bg-red-600 border border-red-800 text-red-200 px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)] flex items-center gap-2">
+                      <Link href="/admin/disaster" className="w-full sm:w-auto">
+                        <button className="w-full sm:w-auto bg-red-900/30 hover:bg-red-600 border border-red-800 text-red-200 px-6 py-3 md:py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)] flex items-center justify-center gap-2">
                             <span>⚠️ EMERGENCY</span>
                         </button>
                       </Link>
-
-
-                      
                 </div>
             </div>
 

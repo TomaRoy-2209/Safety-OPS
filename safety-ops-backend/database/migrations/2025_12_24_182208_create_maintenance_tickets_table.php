@@ -23,6 +23,7 @@ public function up()
         $table->string('longitude')->nullable();
         $table->string('status')->default('open'); // open, resolved
         $table->timestamps();
+        $table->string('image_path')->nullable(); // ✅ Added this
     });
 }
 
