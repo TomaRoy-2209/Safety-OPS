@@ -5,7 +5,7 @@ import axios from 'axios';
 import DashboardLayout from "../components/DashboardLayout";
 import IntelViewer from "../components/IntelViewer";
 import Link from 'next/link'; 
-import { requestForToken } from '../../firebase'; // Removed onMessageListener if not used here to prevent double alerts
+import { requestForToken } from '../../firebase'; 
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -35,9 +35,13 @@ export default function AdminDashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             };
 
+            // 👇 FIX: Use Environment Variable
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
             // 3. Fetch Data (Profile + Incidents)
-            const profileReq = await axios.get("http://localhost:1801/api/auth/profile", config);
-            const incidentsReq = await axios.get("http://localhost:1801/api/incidents", config);
+            // Replaced http://localhost:1801 with API_URL
+            const profileReq = await axios.get(`${API_URL}/api/auth/profile`, config);
+            const incidentsReq = await axios.get(`${API_URL}/api/incidents`, config);
 
             // Process User
             setUser(profileReq.data.user || profileReq.data);

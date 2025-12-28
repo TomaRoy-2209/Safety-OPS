@@ -1,12 +1,15 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import Pusher from 'pusher-js'; // <--- Direct Import
+import Pusher from 'pusher-js'; 
 
 export default function LiveChat({ incidentId, user }) {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const chatEndRef = useRef(null);
+
+    // 👇 FIX: Use Environment Variable
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -16,21 +19,19 @@ export default function LiveChat({ incidentId, user }) {
         const token = localStorage.getItem('jwt');
 
         // 1. Fetch History
-        axios.get(`http://localhost:1801/api/chat/${incidentId}`, {
+        // Replaced http://localhost:1801 with API_URL
+        axios.get(`${API_URL}/api/chat/${incidentId}`, {
             headers: { Authorization: `Bearer ${token}` }
         }).then(res => {
             setMessages(res.data);
             scrollToBottom();
         });
 
-        // 2. RAW PUSHER CONNECTION (Bypassing Laravel Echo)
-        // We connect directly to the channel 'chat.X' and event 'message.sent'
-        
-        // Enable logging so you can see it working in F12 console
+        // 2. RAW PUSHER CONNECTION
         Pusher.logToConsole = true; 
 
-        const pusher = new Pusher('9d9322e7fc4562919851', { // <--- Your Key
-            cluster: 'ap2',                                 // <--- Your Cluster
+        const pusher = new Pusher('9d9322e7fc4562919851', { 
+            cluster: 'ap2', 
             forceTLS: true
         });
 
@@ -42,9 +43,7 @@ export default function LiveChat({ incidentId, user }) {
         channel.bind('message.sent', (data) => {
             console.log("📨 RAW MSG RECEIVED:", data);
             
-            // --- THE FIX ---
-            // If the incoming message's User ID matches MY User ID, 
-            // ignore it. I already added it optimistically.
+            // If the incoming message's User ID matches MY User ID, ignore it.
             if (data.user && user && data.user.id === user.id) {
                 console.log("Ignoring my own echo.");
                 return; 
@@ -52,7 +51,6 @@ export default function LiveChat({ incidentId, user }) {
             
             // Otherwise, it's from someone else. Add it!
             setMessages(prev => {
-                // Double check to prevent duplicates by ID just in case
                 if (prev.find(m => m.id === data.id)) return prev;
                 return [...prev, data];
             });
@@ -75,7 +73,7 @@ export default function LiveChat({ incidentId, user }) {
         
         // Optimistic UI Update
         const tempMsg = {
-            id: Date.now(), // Temp ID
+            id: Date.now(), 
             message: newMessage,
             user: { id: user.id, name: user.name, role: user.role }
         };
@@ -86,7 +84,8 @@ export default function LiveChat({ incidentId, user }) {
 
         try {
             // Send to Backend
-            await axios.post(`http://localhost:1801/api/chat/${incidentId}`, 
+            // Replaced http://localhost:1801 with API_URL
+            await axios.post(`${API_URL}/api/chat/${incidentId}`, 
                 { message: tempMsg.message },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -119,7 +118,7 @@ export default function LiveChat({ incidentId, user }) {
                 )}
                 
                 {messages.map((msg, idx) => {
-                    const isMe = msg.user?.id === user?.id; // Safe check with ?
+                    const isMe = msg.user?.id === user?.id; 
                     return (
                         <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[80%] p-3 rounded-xl text-sm ${

@@ -13,9 +13,12 @@ export default function EvidenceUpload({ incidentId }) {
         const formData = new FormData();
         formData.append('evidence', file);
 
+        // 👇 FIX: Use Environment Variable
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
         try {
-            // NOTE: Keep your port logic here (1801)
-            const response = await axios.post(`http://127.0.0.1:1801/api/incidents/${incidentId}/upload`, formData, {
+            // Replaced http://127.0.0.1:1801 with API_URL
+            const response = await axios.post(`${API_URL}/api/incidents/${incidentId}/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setUploadedUrl(response.data.url);

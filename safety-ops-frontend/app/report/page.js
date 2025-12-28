@@ -60,16 +60,21 @@ export default function UnifiedReportPage() {
         data.append(activeTab === 'emergency' ? 'evidence' : 'image', formData.file);
     }
 
+    // 👇 FIX: Use Environment Variable
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
     try {
         let url = "";
         
         if (activeTab === 'emergency') {
             // 🔴 EMERGENCY ENDPOINT
-            url = "http://localhost:1801/api/incidents";
+            // Replaced http://localhost:1801 with API_URL
+            url = `${API_URL}/api/incidents`;
             data.append('type', formData.type);
         } else {
-            // 🟡 MAINTENANCE ENDPOINT (Tarin's Feature)
-            url = "http://localhost:1801/api/maintenance/tickets";
+            // 🟡 MAINTENANCE ENDPOINT
+            // Replaced http://localhost:1801 with API_URL
+            url = `${API_URL}/api/maintenance/tickets`;
             data.append('category', formData.category);
         }
 

@@ -20,7 +20,10 @@ export default function UserManagement() {
         }
 
         try {
-            const res = await axios.get('http://127.0.0.1:1801/api/admin/users', {
+            // 👇 FIX: Use Environment Variable
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
+            const res = await axios.get(`${API_URL}/api/admin/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             

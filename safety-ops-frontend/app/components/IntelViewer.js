@@ -3,11 +3,21 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import axios from 'axios'; 
 import LiveChat from './LiveChat';
-import AiSummarizer from './AiSummarizer'; // 👈 1. IMPORT ADDED
+import AiSummarizer from './AiSummarizer'; 
 
 export default function IntelViewer({ incident, onClose }) {
   const [mounted, setMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState(null); 
+
+  // 👇 FIX: Define API_URL once
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
+  // Helper to ensure media URLs are absolute
+  const getMediaUrl = (path) => {
+      if (!path) return '';
+      if (path.startsWith('http')) return path;
+      return `${API_URL}${path}`;
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -18,7 +28,8 @@ export default function IntelViewer({ incident, onClose }) {
         try {
             const token = localStorage.getItem('jwt');
             if (token) {
-                const res = await axios.get("http://localhost:1801/api/auth/profile", {
+                // 👇 FIX: Use API_URL
+                const res = await axios.get(`${API_URL}/api/auth/profile`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setCurrentUser(res.data.user || res.data);
@@ -59,7 +70,7 @@ export default function IntelViewer({ incident, onClose }) {
                 <h3 className="text-xs font-bold text-gray-400 uppercase mb-1">Sitrep</h3>
                 <p className="text-gray-200 leading-relaxed mb-4">{incident.description}</p>
                 
-                {/* 👇👇👇 2. AI BUTTON PLACED HERE 👇👇👇 */}
+                {/* AI BUTTON */}
                 <AiSummarizer incidentId={incident.id} />
             </div>
 
@@ -77,7 +88,8 @@ export default function IntelViewer({ incident, onClose }) {
                                 
                                 {(file.file_type === 'image' || file.file_type.includes('image')) && (
                                     <img 
-                                        src={file.file_path} 
+                                        // 👇 FIX: Use helper to get full URL
+                                        src={getMediaUrl(file.file_path)} 
                                         alt={`Evidence ${index}`} 
                                         className="w-full h-64 object-cover"
                                         onError={(e) => {
@@ -89,7 +101,8 @@ export default function IntelViewer({ incident, onClose }) {
 
                                 {(file.file_type === 'video' || file.file_type.includes('video')) && (
                                     <video controls className="w-full h-64 object-cover bg-black">
-                                        <source src={file.file_path} type="video/mp4" />
+                                        {/* 👇 FIX: Use helper to get full URL */}
+                                        <source src={getMediaUrl(file.file_path)} type="video/mp4" />
                                         Video unavailable
                                     </video>
                                 )}

@@ -8,8 +8,6 @@ export default function MaintenancePage() {
     const router = useRouter();
     const [tickets, setTickets] = useState([]);
     const [submitting, setSubmitting] = useState(false);
-    
-    // ✅ FIX 1: Define the loading state so Vercel doesn't crash
     const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
@@ -17,12 +15,11 @@ export default function MaintenancePage() {
     });
 
     useEffect(() => {
-        // ✅ FIX 2: Check for window to avoid server-side errors
         const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : null;
         
         if (!token) {
             setLoading(false);
-            return; // let the layout handle redirect or show empty
+            return; 
         }
 
         // Get Location
@@ -38,8 +35,8 @@ export default function MaintenancePage() {
 
     const fetchTickets = async (token) => {
         try {
-            // ✅ FIX 3: Use Process Env for API URL
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            // 👇 FIX: Use Process Env for API URL
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
             const res = await axios.get(`${API_URL}/api/maintenance/my-tickets`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -47,7 +44,6 @@ export default function MaintenancePage() {
         } catch (e) { 
             console.error(e); 
         } finally {
-            // ✅ FIX 4: Always turn off loading
             setLoading(false);
         }
     };
@@ -56,7 +52,9 @@ export default function MaintenancePage() {
         e.preventDefault();
         setSubmitting(true);
         const token = localStorage.getItem('jwt');
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        
+        // 👇 FIX: Use Process Env for API URL
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
         try {
             await axios.post(`${API_URL}/api/maintenance/tickets`, formData, {
@@ -71,12 +69,13 @@ export default function MaintenancePage() {
         setSubmitting(false);
     };
 
-    // ✅ FIX 5: Added the missing updateStatus function used in your table
     const updateStatus = async (id, newStatus) => {
         const token = localStorage.getItem('jwt');
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        
+        // 👇 FIX: Use Process Env for API URL
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+        
         try {
-            // Assuming your backend supports PUT/PATCH for status
             await axios.patch(`${API_URL}/api/maintenance/tickets/${id}`, 
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -146,7 +145,7 @@ export default function MaintenancePage() {
                                         <td className="p-4">
                                             {ticket.image_path ? (
                                                 <a 
-                                                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${ticket.image_path}`} 
+                                                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801'}${ticket.image_path}`} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 text-xs font-bold underline flex items-center gap-1"

@@ -28,15 +28,18 @@ export default function CitizenDashboard() {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
+            // 👇 FIX: Use Environment Variable
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+            
             // 1. Fetch User Profile
-            const profileRes = await axios.get("http://localhost:1801/api/auth/profile", config);
+            const profileRes = await axios.get(`${API_URL}/api/auth/profile`, config);
             setUser(profileRes.data.user || profileRes.data);
 
             // 2. Fetch EMERGENCY Reports
-            const emergencyRes = await axios.get("http://localhost:1801/api/my-reports", config);
+            const emergencyRes = await axios.get(`${API_URL}/api/my-reports`, config);
             
             // 3. Fetch MAINTENANCE Tickets (New)
-            const maintenanceRes = await axios.get("http://localhost:1801/api/maintenance/my-tickets", config);
+            const maintenanceRes = await axios.get(`${API_URL}/api/maintenance/my-tickets`, config);
 
             // 4. Merge & Tag Them
             const emergencyList = emergencyRes.data.map(item => ({ ...item, reportType: 'emergency' }));

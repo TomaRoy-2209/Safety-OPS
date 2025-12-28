@@ -32,13 +32,17 @@ export default function WorkerDashboard() {
       const token = localStorage.getItem("jwt");
       if(!token) { router.push('/login'); return; }
 
+      // 👇 FIX: Use Environment Variable
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
       try {
           // 1. Get Profile & Determine Type (Once)
           let currentUser = user;
           let currentType = workerType;
 
           if (!currentUser) {
-              const profileRes = await axios.get("http://localhost:1801/api/auth/profile", {
+              // Replaced http://localhost:1801 with API_URL
+              const profileRes = await axios.get(`${API_URL}/api/auth/profile`, {
                  headers: { Authorization: `Bearer ${token}` }
               });
               currentUser = profileRes.data.user || profileRes.data;
@@ -55,9 +59,11 @@ export default function WorkerDashboard() {
           // 2. Fetch Data Based on Type
           let url = "";
           if (currentType === 'EMERGENCY') {
-              url = "http://localhost:1801/api/incidents"; // Your assigned emergency tasks
+              // Replaced http://localhost:1801 with API_URL
+              url = `${API_URL}/api/incidents`; // Your assigned emergency tasks
           } else {
-              url = "http://localhost:1801/api/admin/maintenance/all"; // All maintenance tickets
+              // Replaced http://localhost:1801 with API_URL
+              url = `${API_URL}/api/admin/maintenance/all`; // All maintenance tickets
           }
 
           const taskRes = await axios.get(url, {
@@ -102,8 +108,12 @@ export default function WorkerDashboard() {
   // Maintenance Action: Fix Pothole
   const resolveMaintenance = async (id) => {
       const token = localStorage.getItem("jwt");
+      // 👇 FIX: Use Environment Variable
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
       try {
-          await axios.put(`http://localhost:1801/api/admin/maintenance/${id}`, 
+          // Replaced http://localhost:1801 with API_URL
+          await axios.put(`${API_URL}/api/admin/maintenance/${id}`, 
               { status: 'resolved' },
               { headers: { Authorization: `Bearer ${token}` } }
           );

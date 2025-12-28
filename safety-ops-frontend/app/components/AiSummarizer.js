@@ -12,10 +12,13 @@ export default function AiSummarizer({ incidentId }) {
         setError(null);
         setSummary(null);
 
+        // 👇 FIX: Use Environment Variable
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
         try {
             const token = localStorage.getItem('jwt');
             const res = await axios.post(
-                `http://localhost:1801/api/incidents/${incidentId}/summarize`,
+                `${API_URL}/api/incidents/${incidentId}/summarize`,
                 {}, 
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -58,7 +61,7 @@ export default function AiSummarizer({ incidentId }) {
                 </div>
             )}
 
-            {/* 3. The Result (The part you were missing!) */}
+            {/* 3. The Result */}
             {summary && (
                 <div className="bg-[#1a1025] border-l-4 border-purple-500 p-4 rounded-r-lg shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="flex justify-between items-start mb-2">

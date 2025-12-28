@@ -34,7 +34,6 @@ export const requestForToken = async () => {
     console.log("✅ Service Worker Registered. Waiting for it to be active...");
 
     // 2. CRITICAL STEP: Wait for the Service Worker to be fully ready
-    // This fixes the "no active Service Worker" error
     await navigator.serviceWorker.ready;
     console.log("✅ Service Worker is ACTIVE.");
 
@@ -53,7 +52,10 @@ export const requestForToken = async () => {
           return;
       }
 
-      await fetch('http://localhost:1801/api/auth/fcm-token', {
+      // 👇 FIX: Use Environment Variable
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
+      await fetch(`${API_URL}/api/auth/fcm-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

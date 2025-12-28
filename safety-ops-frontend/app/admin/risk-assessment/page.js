@@ -15,9 +15,12 @@ export default function RiskAssessmentPage() {
                 // 1. Check Token
                 if (!token) { console.error("No token"); return; }
 
+                // 👇 FIX: Use Environment Variable
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
                 // 2. Call API
                 const res = await axios.get(
-                    "http://localhost:1801/api/auth/analytics/risk-assessment",
+                    `${API_URL}/api/auth/analytics/risk-assessment`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,

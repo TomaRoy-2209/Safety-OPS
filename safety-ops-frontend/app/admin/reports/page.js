@@ -12,8 +12,11 @@ export default function ReportsPage() {
         try {
             const token = localStorage.getItem('jwt');
             
+            // 👇 FIX: Use Environment Variable
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+            
             // We use 'blob' response type for files
-            const res = await axios.get(`http://localhost:1801/api/reports/generate?type=${type}&days=${days}`, {
+            const res = await axios.get(`${API_URL}/api/reports/generate?type=${type}&days=${days}`, {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: 'blob' 
             });

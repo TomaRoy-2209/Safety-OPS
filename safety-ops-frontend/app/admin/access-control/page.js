@@ -60,8 +60,11 @@ export default function AccessControlPanel() {
         setLoading(true);
         const token = localStorage.getItem('jwt');
         
+        // 👇 FIX: Use Environment Variable
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
         try {
-            await axios.post('http://127.0.0.1:1801/api/admin/users', formData, {
+            await axios.post(`${API_URL}/api/admin/users`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSuccess(`✅ ${unitClass.toUpperCase()} UNIT DEPLOYED: ${formData.name}`);

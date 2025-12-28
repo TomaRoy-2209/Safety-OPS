@@ -29,8 +29,12 @@ export default function LiveFeedPage() {
             return;
         }
 
+        // 👇 FIX: Use Environment Variable
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
         try {
-            const res = await axios.get('http://localhost:1801/api/incidents', {
+            // Replaced http://localhost:1801 with API_URL
+            const res = await axios.get(`${API_URL}/api/incidents`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -40,7 +44,7 @@ export default function LiveFeedPage() {
                 Array.isArray(raw) ? raw :                 
                 (Array.isArray(raw.data) ? raw.data :      
                 (Array.isArray(raw.incidents) ? raw.incidents : 
-                []));                                      
+                []));                                     
 
             // Alert logic (Play sound if list grows)
             if (prevCountRef.current > 0 && newData.length > prevCountRef.current) {

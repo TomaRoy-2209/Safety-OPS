@@ -14,7 +14,10 @@ export default function DispatchPage() {
     useEffect(() => {
         const token = localStorage.getItem('jwt');
         
-        axios.get('http://localhost:1801/api/incidents', {
+        // 👇 FIX: Use Environment Variable
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
+        axios.get(`${API_URL}/api/incidents`, {
             headers: { Authorization: `Bearer ${token}` }
         }) 
             .then(res => {
@@ -36,7 +39,11 @@ export default function DispatchPage() {
 
         try {
             const token = localStorage.getItem('jwt');
-            await axios.post(`http://localhost:1801/api/incidents/${id}/assign`, 
+            
+            // 👇 FIX: Use Environment Variable
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
+            await axios.post(`${API_URL}/api/incidents/${id}/assign`, 
                 { agency: agency },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -122,7 +129,7 @@ export default function DispatchPage() {
                                         className="bg-[#0a0a0a] text-white border border-gray-700 text-sm rounded p-2 focus:border-blue-500 outline-none"
                                         onChange={(e) => handleAgencyChange(incident.id, e.target.value)}
                                         defaultValue=""
->
+                                    >
                                         <option value="" disabled>Select Unit...</option>
                                         
                                         <optgroup label="Police Dept">

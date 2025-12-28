@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../components/DashboardLayout";
 import IntelViewer from "../components/IntelViewer";
-import { requestForToken, onMessageListener } from '../../firebase'; // ✅ 1. Import Firebase
+import { requestForToken, onMessageListener } from '../../firebase'; 
 
 export default function WorkerDashboard() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function WorkerDashboard() {
   const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [alertState, setAlertState] = useState(null); // Renamed to alertState to avoid conflict with window.alert
+  const [alertState, setAlertState] = useState(null); 
 
   // We track the IDs we have already seen.
   const knownIdsRef = useRef(new Set());
@@ -31,11 +31,15 @@ export default function WorkerDashboard() {
       const token = localStorage.getItem("jwt");
       if(!token) { router.push('/login'); return; }
 
+      // 👇 FIX: Use Environment Variable
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+
       try {
           // 1. Get Profile (Once)
           let currentUser = user;
           if (!currentUser) {
-              const profileRes = await axios.get("http://localhost:1801/api/auth/profile", {
+              // Replaced http://localhost:1801 with API_URL
+              const profileRes = await axios.get(`${API_URL}/api/auth/profile`, {
                  headers: { Authorization: `Bearer ${token}` }
               });
               currentUser = profileRes.data.user || profileRes.data;
@@ -43,7 +47,8 @@ export default function WorkerDashboard() {
           }
 
           // 2. Get ONLY My Assigned Tasks
-          const taskRes = await axios.get("http://localhost:1801/api/incidents", {
+          // Replaced http://localhost:1801 with API_URL
+          const taskRes = await axios.get(`${API_URL}/api/incidents`, {
              headers: { Authorization: `Bearer ${token}` }
           });
           
