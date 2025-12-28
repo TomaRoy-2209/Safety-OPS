@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 
 // 🚨 CRITICAL DEPLOYMENT FIX:
 // Maps must be imported dynamically with ssr: false, or Vercel build will FAIL.
-const MapComponent = dynamic(() => import('../../components/MapComponent'), { 
+const MapComponent = dynamic(() => import('../components/MapComponent'), { 
     ssr: false,
     loading: () => <div className="h-full w-full bg-gray-900 animate-pulse flex items-center justify-center text-blue-500">LOADING SATELLITE UPLINK...</div>
 });
