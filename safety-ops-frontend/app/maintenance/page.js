@@ -9,13 +9,21 @@ export default function MaintenancePage() {
     const [tickets, setTickets] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     
+    // ✅ FIX 1: Define the loading state so Vercel doesn't crash
+    const [loading, setLoading] = useState(true);
+
     const [formData, setFormData] = useState({
         title: '', category: 'Road', description: '', latitude: '', longitude: ''
     });
 
     useEffect(() => {
-        const token = localStorage.getItem('jwt');
-        if (!token) return router.push('/login');
+        // ✅ FIX 2: Check for window to avoid server-side errors
+        const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : null;
+        
+        if (!token) {
+            setLoading(false);
+            return; // let the layout handle redirect or show empty
+        }
 
         // Get Location
         if (navigator.geolocation) {
@@ -30,26 +38,53 @@ export default function MaintenancePage() {
 
     const fetchTickets = async (token) => {
         try {
-            const res = await axios.get('http://localhost:1801/api/maintenance/my-tickets', {
+            // ✅ FIX 3: Use Process Env for API URL
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await axios.get(`${API_URL}/api/maintenance/my-tickets`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTickets(res.data);
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e); 
+        } finally {
+            // ✅ FIX 4: Always turn off loading
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         const token = localStorage.getItem('jwt');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
         try {
-            await axios.post('http://localhost:1801/api/maintenance/tickets', formData, {
+            await axios.post(`${API_URL}/api/maintenance/tickets`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert("✅ Ticket Submitted!");
             setFormData({ ...formData, title: '', description: '' });
             fetchTickets(token);
-        } catch (e) { alert("Error submitting ticket"); }
+        } catch (e) { 
+            alert("Error submitting ticket"); 
+        }
         setSubmitting(false);
+    };
+
+    // ✅ FIX 5: Added the missing updateStatus function used in your table
+    const updateStatus = async (id, newStatus) => {
+        const token = localStorage.getItem('jwt');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        try {
+            // Assuming your backend supports PUT/PATCH for status
+            await axios.patch(`${API_URL}/api/maintenance/tickets/${id}`, 
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchTickets(token);
+        } catch (e) {
+            alert("Could not update status (Feature might be admin only)");
+        }
     };
 
     return (
@@ -71,8 +106,9 @@ export default function MaintenancePage() {
                         </button>
                     </form>
                 </div>
+
                 {/* THE LOG TABLE */}
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto bg-[#0a0a0a] border border-gray-800 rounded-xl p-4">
                     <table className="w-full text-left text-sm text-gray-400">
                         <thead className="bg-[#111] text-gray-200 uppercase font-bold text-xs">
                             <tr>
@@ -80,7 +116,7 @@ export default function MaintenancePage() {
                                 <th className="p-4">Issue</th>
                                 <th className="p-4">Category</th>
                                 <th className="p-4">Location</th>
-                                <th className="p-4">Evidence</th> {/* ✅ NEW COLUMN */}
+                                <th className="p-4">Evidence</th>
                                 <th className="p-4">Status</th>
                                 <th className="p-4 text-right">Actions</th>
                             </tr>
@@ -107,11 +143,10 @@ export default function MaintenancePage() {
                                             {ticket.latitude ? `${Number(ticket.latitude).toFixed(4)}, ${Number(ticket.longitude).toFixed(4)}` : 'N/A'}
                                         </td>
                                         
-                                        {/* ✅ NEW: DISPLAY EVIDENCE IMAGE */}
                                         <td className="p-4">
                                             {ticket.image_path ? (
                                                 <a 
-                                                    href={`http://localhost:1801${ticket.image_path}`} 
+                                                    href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${ticket.image_path}`} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
                                                     className="text-blue-400 hover:text-blue-300 text-xs font-bold underline flex items-center gap-1"
