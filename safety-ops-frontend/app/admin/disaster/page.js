@@ -64,7 +64,6 @@ export default function AccessControlPanel() {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
         try {
-            // Replaced http://127.0.0.1:1801 with API_URL
             await axios.post(`${API_URL}/api/admin/users`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
