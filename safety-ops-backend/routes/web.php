@@ -4,6 +4,20 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan; // 👈 ADDED THIS IMPORT
 use App\Services\FCMService; 
 
+Route::get('/check-sms', function () {
+    // 1. Use a dummy number (or your own)
+    $phone = "01700000000"; 
+    
+    // 2. Call your EXISTING service
+    // (Make sure this matches your actual Class name)
+    $response = \App\Services\SmsService::send($phone, "Testing Connection");
+
+    // 3. Print the result
+    return [
+        'status' => 'Testing SMS...',
+        'response_from_provider' => $response
+    ];
+});
 Route::get('/test-fcm', function () {
     // 1. Find a real user who has a token
     $user = \App\Models\User::whereNotNull('fcm_token')->first();
