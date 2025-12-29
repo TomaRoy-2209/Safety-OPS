@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Services\FCMService; // Make sure this path matches where she put the file
+use Illuminate\Support\Facades\Artisan; // 👈 ADDED THIS IMPORT
+use App\Services\FCMService; 
 
 Route::get('/test-fcm', function () {
     // 1. PASTE THE TOKEN FROM STEP 1 HERE
@@ -45,4 +46,4 @@ Route::get('/fix-server', function () {
     Artisan::call('view:clear');
 
     return "✅ Server Fixed! Config cleared, Routes cleared, Migrations run.";
-})
+}); // 👈 ADDED THE MISSING SEMICOLON HERE
