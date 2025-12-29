@@ -5,50 +5,41 @@ use Illuminate\Support\Facades\Artisan; // 👈 ADDED THIS IMPORT
 use App\Services\FCMService; 
 
 Route::get('/test-fcm', function () {
-    $token = "YOUR_TEST_TOKEN_HERE"; // Optional, or leave blank to just test file access
+    // 1. Find a real user who has a token
+    $user = \App\Models\User::whereNotNull('fcm_token')->first();
 
-    // 1. Debug File Paths
-    $storagePath = storage_path('app/firebase_credentials.json');
-    $publicPath = public_path('firebase_credentials.json');
-    $basePath = base_path('firebase_credentials.json');
-
-    echo "<h3>🔍 FCM Debugger</h3>";
-    
-    echo "<strong>Checking Storage:</strong> $storagePath <br>";
-    echo "Result: " . (file_exists($storagePath) ? '✅ FOUND' : '❌ NOT FOUND') . "<br><br>";
-
-    echo "<strong>Checking Public:</strong> $publicPath <br>";
-    echo "Result: " . (file_exists($publicPath) ? '✅ FOUND' : '❌ NOT FOUND') . "<br><br>";
-
-    echo "<strong>Checking Root:</strong> $basePath <br>";
-    echo "Result: " . (file_exists($basePath) ? '✅ FOUND' : '❌ NOT FOUND') . "<br><br>";
-
-    // 2. Debug Google Library
-    echo "<strong>Checking Google Auth Library:</strong> ";
-    if (class_exists('Google\Auth\Credentials\ServiceAccountCredentials')) {
-        echo "✅ INSTALLED <br><br>";
-    } else {
-        echo "❌ MISSING (Run 'composer require google/auth') <br><br>";
-        return;
+    if (!$user) {
+        return "<h3>❌ No users found with tokens.</h3> <p>Please log in to the Citizen Dashboard on your phone/PC to generate a token first.</p>";
     }
 
-    // 3. Try to Send
-    echo "<strong>Attempting to Send...</strong><br>";
-    try {
-        $success = \App\Services\FCMService::send(
-            $token, 
-            "Debug Test", 
-            "Testing connection..."
-        );
-        
-        if ($success) {
-            echo "<h3 style='color:green'>🎉 SUCCESS! Notification Sent.</h3>";
-        } else {
-            echo "<h3 style='color:red'>❌ FAILED. (See above for missing file)</h3>";
-        }
-    } catch (\Exception $e) {
-        echo "<h3 style='color:red'>❌ CRITICAL ERROR:</h3>";
-        echo $e->getMessage();
+    echo "<h3>📡 Testing Live Notification</h3>";
+    echo "<strong>Target User:</strong> {$user->name} <br>";
+    echo "<strong>Token:</strong> " . substr($user->fcm_token, 0, 15) . "... <br><br>";
+
+    // 2. Validate the JSON file content
+    $path = storage_path('app/firebase_credentials.json');
+    $content = file_get_contents($path);
+    $json = json_decode($content, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE || !isset($json['project_id'])) {
+        return "<h3 style='color:red'>❌ JSON Error</h3> <p>The file was found but is corrupted or empty. Did you copy the text correctly?</p>";
+    }
+    
+    echo "<strong>Project ID:</strong> " . $json['project_id'] . " (File is valid) <br><br>";
+
+    // 3. Send Real Test
+    echo "<strong>Sending...</strong><br>";
+    
+    $success = \App\Services\FCMService::send(
+        $user->fcm_token, 
+        "SYSTEM TEST 🚀", 
+        "If you read this, the Live Server is FULLY OPERATIONAL!"
+    );
+
+    if ($success) {
+        return "<h1 style='color:green'>✅ SUCCESS!</h1> <p>Notification sent successfully. Check your device.</p>";
+    } else {
+        return "<h1 style='color:red'>❌ FAILED (API Error)</h1> <p>The file is good, but Google rejected the request. Check if the 'Firebase Cloud Messaging API (V1)' is enabled in Google Console.</p>";
     }
 });
 
