@@ -12,55 +12,70 @@ class FCMService
     {
         if (!$token) return;
 
-        // 1. Get the Project ID from the JSON file
-        $credentialsPath = storage_path('app/firebase_credentials.json');
-        
+        $fileName = 'firebase_credentials.json';
+
+        // 🔍 CHECK 1: Storage Folder (Where you put it)
+        $credentialsPath = storage_path("app/$fileName");
+
+        // 🔍 CHECK 2: Root Directory (Fallback)
         if (!file_exists($credentialsPath)) {
-            Log::error("FCM Error: firebase_credentials.json not found in storage/app/");
+            $credentialsPath = base_path($fileName);
+        }
+
+        // 🔍 CHECK 3: Public Folder (Last Resort)
+        if (!file_exists($credentialsPath)) {
+            $credentialsPath = public_path($fileName);
+        }
+
+        // ❌ IF STILL NOT FOUND
+        if (!file_exists($credentialsPath)) {
+            Log::error("❌ FCM CRITICAL: firebase_credentials.json NOT FOUND in Storage, Root, or Public.");
             return false;
         }
 
-        $json = json_decode(file_get_contents($credentialsPath), true);
-        $projectId = $json['project_id'];
+        try {
+            // 1. Authenticate
+            $json = json_decode(file_get_contents($credentialsPath), true);
+            $projectId = $json['project_id'];
 
-        // 2. Generate an Access Token using Google Auth
-        $credentials = new ServiceAccountCredentials(
-            ['https://www.googleapis.com/auth/firebase.messaging'],
-            $credentialsPath
-        );
-        $accessToken = $credentials->fetchAuthToken()['access_token'];
+            $credentials = new ServiceAccountCredentials(
+                ['https://www.googleapis.com/auth/firebase.messaging'],
+                $credentialsPath
+            );
+            $accessToken = $credentials->fetchAuthToken()['access_token'];
 
-        // 3. Send the request to the NEW HTTP v1 Endpoint
-        $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+            // 2. Prepare Payload
+            $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
-        $data = [
-            "message" => [
-                "token" => $token,
-                "notification" => [
-                    "title" => $title,
-                    "body" => $body
-                ],
-                // ✅ ADD THIS SECTION for better Web delivery
-                "webpush" => [
-                    "headers" => [
-                        "Urgency" => "high"
-                    ],
+            $data = [
+                "message" => [
+                    "token" => $token,
                     "notification" => [
-                        "requireInteraction" => true
+                        "title" => $title,
+                        "body" => $body
+                    ],
+                    "webpush" => [
+                        "headers" => ["Urgency" => "high"],
+                        "notification" => ["requireInteraction" => true]
                     ]
                 ]
-            ]
-        ];
+            ];
 
-        try {
-            $response = Http::withToken($accessToken) // Use the generated token
+            // 3. Send
+            $response = Http::withToken($accessToken)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post($url, $data);
 
-            Log::info("FCM Response: " . $response->body());
-            return $response->successful();
+            if ($response->successful()) {
+                Log::info("✅ FCM Sent: " . $response->body());
+                return true;
+            } else {
+                Log::error("❌ FCM Failed: " . $response->body());
+                return false;
+            }
+
         } catch (\Exception $e) {
-            Log::error("FCM Error: " . $e->getMessage());
+            Log::error("❌ FCM Exception: " . $e->getMessage());
             return false;
         }
     }
