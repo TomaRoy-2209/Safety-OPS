@@ -13,7 +13,6 @@ export default function AdminMaintenanceLog() {
         const token = localStorage.getItem('jwt');
         const role = localStorage.getItem('role');
 
-        // ✅ Allow 'admin' OR 'worker'
         if (!token || (role !== 'admin' && role !== 'worker')) {
             router.push('/login');
             return;
@@ -25,7 +24,6 @@ export default function AdminMaintenanceLog() {
     const fetchMaintenanceLog = async (token) => {
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
-            
             const res = await axios.get(`${API_URL}/api/admin/maintenance/all`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -46,7 +44,6 @@ export default function AdminMaintenanceLog() {
                 { status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            
             fetchMaintenanceLog(token);
             alert(`Ticket marked as ${newStatus}`);
         } catch (error) {
@@ -54,7 +51,7 @@ export default function AdminMaintenanceLog() {
         }
     };
 
-    // 🛡️ HELPER: intelligently handles Cloudinary (Absolute) vs Local (Relative) paths
+    // 🛡️ HELPER: Handles Cloudinary vs Local paths
     const getImageUrl = (path) => {
         if (!path) return null;
         if (path.startsWith('http') || path.startsWith('https')) {
@@ -101,14 +98,12 @@ export default function AdminMaintenanceLog() {
                                 <tr><td colSpan="7" className="p-8 text-center text-gray-600">Maintenance Log is Empty.</td></tr>
                             ) : (
                                 tickets.map(ticket => {
-                                    // Calculate the correct image URL for this specific ticket
-                                    // Use 'image' (from backend consistency) or 'image_path' depending on your DB column
+                                    // Calculate image URL once
                                     const rawPath = ticket.image_path || ticket.image; 
                                     const finalImageUrl = getImageUrl(rawPath);
 
                                     return (
                                         <tr key={ticket.id} className="hover:bg-white/5 transition-colors">
-                                            
                                             {/* 1. ID */}
                                             <td className="p-4 font-mono text-gray-500 hidden md:table-cell">#{ticket.id}</td>
                                             
@@ -117,7 +112,7 @@ export default function AdminMaintenanceLog() {
                                                 <div className="font-bold text-white text-base">{ticket.title}</div>
                                                 <div className="text-xs text-gray-500 truncate max-w-[150px] md:max-w-[200px]">{ticket.description}</div>
                                                 
-                                                {/* MOBILE ONLY BLOCK */}
+                                                {/* 📱 MOBILE ONLY BLOCK (Fixed) */}
                                                 <div className="md:hidden mt-2 space-y-1">
                                                     <div className="flex items-center gap-2">
                                                         <span className="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] font-bold uppercase">
