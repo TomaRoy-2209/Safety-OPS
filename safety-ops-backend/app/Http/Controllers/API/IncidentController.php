@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Services\SMSService;
 use App\Models\User;
-use App\Services\FCMService; // <--- ✅ IMPORTED FCM SERVICE
+use App\Services\FCMService;
 
 class IncidentController extends Controller
 {
@@ -18,12 +18,13 @@ class IncidentController extends Controller
     public function store(Request $request)
     {
         // 1. Validate Text AND File together
+        // 🔴 FIX: Changed 'media' to 'evidence' to match React Frontend
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'media' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:40960' // Max 40MB
+            'latitude' => 'required', // Removed strict numeric for flexibility
+            'longitude' => 'required',
+            'evidence' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov|max:40960' 
         ]);
 
         return DB::transaction(function () use ($request, $validated) {
@@ -39,12 +40,13 @@ class IncidentController extends Controller
             ]);
 
             // 3. Handle Cloudinary Upload IMMEDIATELY
-            if ($request->hasFile('media')) {
+            // 🔴 FIX: Looking for 'evidence', not 'media'
+            if ($request->hasFile('evidence')) {
                 
                 // Upload to Cloudinary
-                $uploadedFile = $request->file('media')->storeOnCloudinary('incidents');
+                $uploadedFile = $request->file('evidence')->storeOnCloudinary('incidents');
                 $url = $uploadedFile->getSecurePath();
-                $fileType = $request->file('media')->getClientMimeType();
+                $fileType = $request->file('evidence')->getClientMimeType();
                 $simpleFileType = str_starts_with($fileType, 'video') ? 'video' : 'image';
 
                 // Save to IncidentMedia Table
@@ -109,7 +111,6 @@ class IncidentController extends Controller
         $incident->save();
 
         // 3. NOTIFICATION LOGIC (SMS + FCM)
-        // We look for a User whose 'unit' matches the assigned agency name
         $responder = User::where('unit', $request->agency)->first();
 
         $smsStatus = "No phone number found";
@@ -118,12 +119,12 @@ class IncidentController extends Controller
         if ($responder) {
             // A. SEND SMS
             if ($responder->phone) {
-                $msg = "ALERT: You have been assigned Incident #{$incident->id}: '{$incident->title}'. Priority: HIGH. Log in to SafetyOps for details.";
+                $msg = "ALERT: You have been assigned Incident #{$incident->id}: '{$incident->title}'. Priority: HIGH.";
                 $sent = SMSService::send($responder->phone, $msg);
                 $smsStatus = $sent ? "SMS Sent" : "SMS Failed";
             }
 
-            // B. SEND PUSH NOTIFICATION (✅ NEW CODE)
+            // B. SEND PUSH NOTIFICATION
             if ($responder->fcm_token) {
                 FCMService::send(
                     $responder->fcm_token,
@@ -160,4 +161,3 @@ class IncidentController extends Controller
         ], 200);
     }
 }
-

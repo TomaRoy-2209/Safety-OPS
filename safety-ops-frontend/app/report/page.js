@@ -42,38 +42,44 @@ export default function UnifiedReportPage() {
   }, []);
 
   const handleFileChange = (e) => {
-    setFormData({ ...formData, file: e.target.files[0] });
+    if (e.target.files && e.target.files[0]) {
+        setFormData({ ...formData, file: e.target.files[0] });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     const token = localStorage.getItem('jwt');
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
-    // Prepare Data (FormData is needed for file uploads)
+    // 🚨 FIX: Robus FormData Construction for Cloudinary
     const data = new FormData();
     data.append('title', formData.title);
     data.append('description', formData.description);
-    data.append('latitude', formData.latitude || '');
-    data.append('longitude', formData.longitude || '');
-    if (formData.file) {
-        data.append(activeTab === 'emergency' ? 'evidence' : 'image', formData.file);
-    }
+    
+    // Use nullish coalescing (??) to ensure 0 coordinates are sent as '0' not ''
+    data.append('latitude', formData.latitude ?? '');
+    data.append('longitude', formData.longitude ?? '');
 
-    // 👇 FIX: Use Environment Variable
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
+    // Append File with correct Backend Key
+    if (formData.file) {
+        if (activeTab === 'emergency') {
+            data.append('evidence', formData.file); // Backend expects 'evidence' for incidents
+        } else {
+            data.append('image', formData.file);    // Backend expects 'image' for maintenance
+        }
+    }
 
     try {
         let url = "";
         
         if (activeTab === 'emergency') {
             // 🔴 EMERGENCY ENDPOINT
-            // Replaced http://localhost:1801 with API_URL
             url = `${API_URL}/api/incidents`;
             data.append('type', formData.type);
         } else {
             // 🟡 MAINTENANCE ENDPOINT
-            // Replaced http://localhost:1801 with API_URL
             url = `${API_URL}/api/maintenance/tickets`;
             data.append('category', formData.category);
         }
@@ -81,7 +87,7 @@ export default function UnifiedReportPage() {
         await axios.post(url, data, {
             headers: { 
                 Authorization: `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data' // Explicitly required for file uploads
             }
         });
 
@@ -90,7 +96,7 @@ export default function UnifiedReportPage() {
 
     } catch (error) {
         console.error("Submission Error", error);
-        alert("Failed to submit report. check console.");
+        alert("Failed to submit report. Check console.");
     } finally {
         setLoading(false);
     }
