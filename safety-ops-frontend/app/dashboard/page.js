@@ -12,7 +12,6 @@ export default function CitizenDashboard() {
   const [myReports, setMyReports] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // New State for Chat
   const [selectedIncident, setSelectedIncident] = useState(null);
 
   useEffect(() => {
@@ -27,25 +26,17 @@ export default function CitizenDashboard() {
     const fetchData = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            
-            // 👇 FIX: Use Environment Variable
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
             
-            // 1. Fetch User Profile
             const profileRes = await axios.get(`${API_URL}/api/auth/profile`, config);
             setUser(profileRes.data.user || profileRes.data);
 
-            // 2. Fetch EMERGENCY Reports
             const emergencyRes = await axios.get(`${API_URL}/api/my-reports`, config);
-            
-            // 3. Fetch MAINTENANCE Tickets (New)
             const maintenanceRes = await axios.get(`${API_URL}/api/maintenance/my-tickets`, config);
 
-            // 4. Merge & Tag Them
             const emergencyList = emergencyRes.data.map(item => ({ ...item, reportType: 'emergency' }));
             const maintenanceList = maintenanceRes.data.map(item => ({ ...item, reportType: 'maintenance' }));
 
-            // Combine and sort by date (Newest first)
             const combined = [...emergencyList, ...maintenanceList].sort((a, b) => 
                 new Date(b.created_at) - new Date(a.created_at)
             );
@@ -59,27 +50,17 @@ export default function CitizenDashboard() {
         }
     };
 
-    // Token Sync
     const syncToken = async () => {
         if (typeof window !== 'undefined') {
-            try {
-                await requestForToken(); 
-                console.log("✅ Citizen Token Synced");
-            } catch (err) {
-                console.error("Token sync failed", err);
-            }
+            try { await requestForToken(); } catch (err) { console.error(err); }
         }
     };
 
-    // Listen for FCM Alerts
-    onMessageListener()
-        .then((payload) => {
-            console.log("🔥 MESSAGE RECEIVED!", payload);
-            const title = payload?.notification?.title || "ALERT";
-            const body = payload?.notification?.body || "Update Received";
-            alert(`🔔 ${title}: ${body}`);
-        })
-        .catch((err) => console.log('failed: ', err));
+    onMessageListener().then((payload) => {
+        const title = payload?.notification?.title || "ALERT";
+        const body = payload?.notification?.body || "Update Received";
+        alert(`🔔 ${title}: ${body}`);
+    }).catch((err) => console.log('failed: ', err));
 
     fetchData();
     syncToken();
@@ -122,55 +103,60 @@ export default function CitizenDashboard() {
         ) : (
             <div className="grid grid-cols-1 gap-4">
                 {myReports.map(report => (
-                    <div key={`${report.reportType}-${report.id}`} className="bg-[#0a0a0a] border border-gray-800 p-6 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center group hover:border-gray-600 transition-all">
+                    <div key={`${report.reportType}-${report.id}`} className="bg-[#0a0a0a] border border-gray-800 p-6 rounded-xl relative group hover:border-gray-600 transition-all">
                         
-                        {/* Left: Info */}
-                        <div className="mb-4 md:mb-0 flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                                {/* Status Indicator */}
-                                <span className={`w-2 h-2 rounded-full ${
+                        {/* --- TOP ROW: TITLE (Left) vs TAGS (Right) --- */}
+                        <div className="flex justify-between items-start mb-4">
+                            
+                            {/* LEFT: Title & Status Dot */}
+                            <div className="flex items-center gap-3">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${
                                     report.status === 'pending' || report.status === 'open' ? 'bg-red-500 animate-pulse' : 
                                     report.status === 'dispatched' || report.status === 'in_progress' ? 'bg-blue-500' : 'bg-green-500'
                                 }`}></span>
-                                
-                                <h3 className="font-bold text-white text-lg">{report.title}</h3>
-                                
-                                {/* TYPE BADGE */}
-                                <span className={`text-[10px] px-2 py-1 rounded border uppercase font-bold ${
+                                <h3 className="font-bold text-white text-lg leading-tight">{report.title}</h3>
+                            </div>
+
+                            {/* RIGHT: Badges (Moved to Corner) */}
+                            <div className="flex flex-col items-end gap-2 pl-4">
+                                {/* Type Badge */}
+                                <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider ${
                                     report.reportType === 'emergency' 
                                     ? 'bg-red-900/20 text-red-500 border-red-900/30' 
                                     : 'bg-yellow-900/20 text-yellow-500 border-yellow-900/30'
                                 }`}>
                                     {report.reportType === 'emergency' ? '🚨 EMERGENCY' : '🛠️ MAINTENANCE'}
                                 </span>
-
-                                <span className="text-[10px] bg-gray-900 text-gray-400 px-2 py-1 rounded border border-gray-800 uppercase">
+                                
+                                {/* Status Badge */}
+                                <span className="text-[10px] bg-gray-900 text-gray-400 px-2 py-0.5 rounded border border-gray-800 uppercase font-mono">
                                     {report.status}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-400 max-w-xl truncate">{report.description}</p>
-                            <span className="text-xs text-gray-600 font-mono mt-2 block">
-                                ID: #{report.id} • {new Date(report.created_at).toLocaleDateString()}
-                            </span>
                         </div>
 
-                        {/* Right: Actions (ONLY SHOW FOR EMERGENCY) */}
-                        {report.reportType === 'emergency' && (
-                            <button 
-                                onClick={() => setSelectedIncident(report)}
-                                className="bg-blue-900/20 hover:bg-blue-600 hover:text-white text-blue-400 border border-blue-900/50 px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2"
-                            >
-                                <span>OPEN COMMS</span>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            </button>
-                        )}
-                        
-                        {/* Alternative for Maintenance (Optional) */}
-                        {report.reportType === 'maintenance' && (
-                             <div className="text-gray-600 text-xs font-mono border border-gray-800 px-3 py-2 rounded">
-                                NON-EMERGENCY
-                             </div>
-                        )}
+                        {/* --- MIDDLE: Description --- */}
+                        <p className="text-sm text-gray-400 max-w-3xl mb-6 leading-relaxed">
+                            {report.description}
+                        </p>
+
+                        {/* --- BOTTOM ROW: ID/Date (Left) vs Actions (Right) --- */}
+                        <div className="flex justify-between items-end border-t border-gray-800/50 pt-4 mt-2">
+                            <span className="text-xs text-gray-600 font-mono">
+                                ID: #{report.id} • {new Date(report.created_at).toLocaleDateString()}
+                            </span>
+
+                            {/* ACTION BUTTON (Bottom Right) */}
+                            {report.reportType === 'emergency' && (
+                                <button 
+                                    onClick={() => setSelectedIncident(report)}
+                                    className="bg-blue-900/20 hover:bg-blue-600 hover:text-white text-blue-400 border border-blue-900/50 px-4 py-2 rounded text-xs font-bold transition-all flex items-center gap-2"
+                                >
+                                    <span>OPEN COMMS</span>
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                </button>
+                            )}
+                        </div>
 
                     </div>
                 ))}
@@ -178,7 +164,7 @@ export default function CitizenDashboard() {
         )}
       </div>
 
-      {/* 3. LIVE CHAT MODAL (Only opens for emergency because button is hidden otherwise) */}
+      {/* 3. LIVE CHAT MODAL */}
       {selectedIncident && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
             <div className="bg-[#0a0a0a] w-full max-w-lg rounded-xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
@@ -187,12 +173,7 @@ export default function CitizenDashboard() {
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                         <h3 className="font-bold text-white text-sm uppercase tracking-wide">Secure Uplink #{selectedIncident.id}</h3>
                     </div>
-                    <button 
-                        onClick={() => setSelectedIncident(null)}
-                        className="text-gray-400 hover:text-white transition-colors p-2"
-                    >
-                        ✕
-                    </button>
+                    <button onClick={() => setSelectedIncident(null)} className="text-gray-400 hover:text-white transition-colors p-2">✕</button>
                 </div>
                 <div className="p-0 bg-black flex-1 overflow-hidden">
                     <LiveChat incidentId={selectedIncident.id} user={user} />
