@@ -53,7 +53,7 @@ export default function UnifiedReportPage() {
     const token = localStorage.getItem('jwt');
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
-    // 🚨 FIX: Robus FormData Construction for Cloudinary
+    // 🚨 FIX: Robust FormData Construction
     const data = new FormData();
     data.append('title', formData.title);
     data.append('description', formData.description);
@@ -84,10 +84,11 @@ export default function UnifiedReportPage() {
             data.append('category', formData.category);
         }
 
+        // 🚨 CRITICAL FIX: Removed manual 'Content-Type' header
+        // Axios automatically sets 'multipart/form-data' with the correct boundary for FormData
         await axios.post(url, data, {
             headers: { 
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data' // Explicitly required for file uploads
+                Authorization: `Bearer ${token}`
             }
         });
 
@@ -95,8 +96,9 @@ export default function UnifiedReportPage() {
         router.push('/dashboard');
 
     } catch (error) {
-        console.error("Submission Error", error);
-        alert("Failed to submit report. Check console.");
+        console.error("Submission Error", error.response?.data || error.message);
+        const errorMsg = error.response?.data?.message || "Failed to submit report. Check console.";
+        alert(errorMsg);
     } finally {
         setLoading(false);
     }
@@ -109,6 +111,7 @@ export default function UnifiedReportPage() {
         {/* --- TAB SWITCHER --- */}
         <div className="flex bg-[#0a0a0a] p-1 rounded-xl mb-6 border border-gray-800">
             <button 
+                type="button" // Prevent accidental submit
                 onClick={() => setActiveTab('emergency')}
                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'emergency' 
@@ -119,6 +122,7 @@ export default function UnifiedReportPage() {
                 <span>🚨 EMERGENCY</span>
             </button>
             <button 
+                type="button" // Prevent accidental submit
                 onClick={() => setActiveTab('maintenance')}
                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'maintenance' 
@@ -204,6 +208,7 @@ export default function UnifiedReportPage() {
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Evidence / Photo</label>
                     <input 
                         type="file" 
+                        accept="image/*,video/*"
                         className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-gray-800 file:text-white hover:file:bg-gray-700"
                         onChange={handleFileChange}
                     />
