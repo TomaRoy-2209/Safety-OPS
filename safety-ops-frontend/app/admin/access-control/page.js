@@ -12,7 +12,7 @@ export default function AccessControlPanel() {
         email: '', 
         password: '', 
         phone: '', 
-        role: 'responder', // Default
+        role: 'worker', // ✅ Default to 'worker' for all official units
         agency: '', 
         unit: ''
     });
@@ -41,7 +41,9 @@ export default function AccessControlPanel() {
         const firstAgency = Object.keys(currentOptions)[0];
         setFormData(prev => ({
             ...prev,
-            role: unitClass === 'emergency' ? 'responder' : 'worker', // ✅ AUTO SWITCH ROLE
+            // 🚨 FIX: Always set role to 'worker' for official admin-created units.
+            // 'responder' role is reserved for public volunteers.
+            role: 'worker', 
             agency: firstAgency,
             unit: currentOptions[firstAgency][0]
         }));
@@ -59,8 +61,6 @@ export default function AccessControlPanel() {
         e.preventDefault();
         setLoading(true);
         const token = localStorage.getItem('jwt');
-        
-        // 👇 FIX: Use Environment Variable
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
         try {
@@ -95,8 +95,8 @@ export default function AccessControlPanel() {
                     >
                         <span className="text-3xl">🚓</span>
                         <div className="text-left">
-                            <h3 className="font-bold text-lg">Emergency Responder</h3>
-                            <p className="text-xs opacity-70">Police, Fire, EMS (Life Critical)</p>
+                            <h3 className="font-bold text-lg">Emergency Unit</h3>
+                            <p className="text-xs opacity-70">Police, Fire, EMS (Official)</p>
                         </div>
                     </button>
 
@@ -110,8 +110,8 @@ export default function AccessControlPanel() {
                     >
                         <span className="text-3xl">🚧</span>
                         <div className="text-left">
-                            <h3 className="font-bold text-lg">Municipality Worker</h3>
-                            <p className="text-xs opacity-70">City Corp, Utilities (Maintenance)</p>
+                            <h3 className="font-bold text-lg">Municipality Unit</h3>
+                            <p className="text-xs opacity-70">City Corp, Utilities (Official)</p>
                         </div>
                     </button>
                 </div>
@@ -121,7 +121,7 @@ export default function AccessControlPanel() {
                     <form onSubmit={handleCreateUser} className="bg-[#0a0a0a] border border-gray-800 p-8 rounded-xl shadow-2xl space-y-6 relative overflow-hidden">
                         
                         <h2 className={`text-xl font-bold border-b pb-4 ${isEmergency ? 'text-blue-500 border-blue-900' : 'text-yellow-500 border-yellow-900'}`}>
-                            Deploy New {isEmergency ? 'Responder' : 'Worker'}
+                            Deploy New {isEmergency ? 'Emergency' : 'Municipality'} Worker
                         </h2>
 
                         {success && <div className="p-3 bg-green-900/30 text-green-400 text-sm font-bold border border-green-500/30 rounded">{success}</div>}
@@ -202,7 +202,7 @@ export default function AccessControlPanel() {
                                 : 'bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-900/20'
                             }`}
                         >
-                            {loading ? 'PROCESSING...' : `AUTHORIZE ${isEmergency ? 'RESPONDER' : 'WORKER'}`}
+                            {loading ? 'PROCESSING...' : `AUTHORIZE ${isEmergency ? 'EMERGENCY' : 'MUNICIPALITY'} WORKER`}
                         </button>
                     </form>
 
@@ -223,7 +223,7 @@ export default function AccessControlPanel() {
                                 }
                             </p>
                             <ul className="mt-4 space-y-2 list-disc list-inside text-xs font-mono opacity-70">
-                                <li>Role Assigned: <strong>{formData.role.toUpperCase()}</strong></li>
+                                <li>System Role: <strong>WORKER (Official)</strong></li>
                                 <li>Access Level: <strong>READ_ONLY + STATUS_UPDATE</strong></li>
                                 <li>Notification Channel: <strong>Push + SMS</strong></li>
                             </ul>
