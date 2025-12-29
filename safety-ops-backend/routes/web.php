@@ -10,7 +10,7 @@ Route::get('/check-sms', function () {
     
     // 2. Call your EXISTING service
     // (Make sure this matches your actual Class name)
-    $response = \App\Services\SmsService::send($phone, "Testing Connection");
+    $response = \App\Services\SMSService::send($phone, "Testing Connection");
 
     // 3. Print the result
     return [
