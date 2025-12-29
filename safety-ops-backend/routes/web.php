@@ -31,3 +31,18 @@ Route::get('/test-fcm', function () {
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/fix-server', function () {
+    // 1. Clear the Config Cache (This fixes CORS)
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    
+    // 2. Run Migrations (Just in case)
+    Artisan::call('migrate', ['--force' => true]);
+    
+    // 3. Clear other caches
+    Artisan::call('cache:clear');
+    Artisan::call('view:clear');
+
+    return "✅ Server Fixed! Config cleared, Routes cleared, Migrations run.";
+})
