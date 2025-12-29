@@ -5,17 +5,51 @@ use Illuminate\Support\Facades\Artisan; // 👈 ADDED THIS IMPORT
 use App\Services\FCMService; 
 
 Route::get('/test-fcm', function () {
-    // 1. PASTE THE TOKEN FROM STEP 1 HERE
-    $myDeviceToken = "PASTE_THE_LONG_STRING_HERE";
+    $token = "YOUR_TEST_TOKEN_HERE"; // Optional, or leave blank to just test file access
 
-    // 2. Send the Test
-    $success = FCMService::send(
-        $myDeviceToken, 
-        "Sabrina's Test", 
-        "If you see this, the Firebase Pipe is working! 🚀"
-    );
+    // 1. Debug File Paths
+    $storagePath = storage_path('app/firebase_credentials.json');
+    $publicPath = public_path('firebase_credentials.json');
+    $basePath = base_path('firebase_credentials.json');
 
-    return $success ? "✅ Push Sent Successfully!" : "❌ Push Failed. Check Laravel Logs.";
+    echo "<h3>🔍 FCM Debugger</h3>";
+    
+    echo "<strong>Checking Storage:</strong> $storagePath <br>";
+    echo "Result: " . (file_exists($storagePath) ? '✅ FOUND' : '❌ NOT FOUND') . "<br><br>";
+
+    echo "<strong>Checking Public:</strong> $publicPath <br>";
+    echo "Result: " . (file_exists($publicPath) ? '✅ FOUND' : '❌ NOT FOUND') . "<br><br>";
+
+    echo "<strong>Checking Root:</strong> $basePath <br>";
+    echo "Result: " . (file_exists($basePath) ? '✅ FOUND' : '❌ NOT FOUND') . "<br><br>";
+
+    // 2. Debug Google Library
+    echo "<strong>Checking Google Auth Library:</strong> ";
+    if (class_exists('Google\Auth\Credentials\ServiceAccountCredentials')) {
+        echo "✅ INSTALLED <br><br>";
+    } else {
+        echo "❌ MISSING (Run 'composer require google/auth') <br><br>";
+        return;
+    }
+
+    // 3. Try to Send
+    echo "<strong>Attempting to Send...</strong><br>";
+    try {
+        $success = \App\Services\FCMService::send(
+            $token, 
+            "Debug Test", 
+            "Testing connection..."
+        );
+        
+        if ($success) {
+            echo "<h3 style='color:green'>🎉 SUCCESS! Notification Sent.</h3>";
+        } else {
+            echo "<h3 style='color:red'>❌ FAILED. (See above for missing file)</h3>";
+        }
+    } catch (\Exception $e) {
+        echo "<h3 style='color:red'>❌ CRITICAL ERROR:</h3>";
+        echo $e->getMessage();
+    }
 });
 
 /*
