@@ -23,49 +23,35 @@ export default function UnifiedReportPage() {
 
   // 1. AUTO-GET LOCATION ON LOAD (With Timeout Fix)
   // 1. ROBUST LOCATION STRATEGY
+  // 1. SIMPLIFIED LOCATION LOGIC
   useEffect(() => {
-    if (!("geolocation" in navigator)) {
+    if (!navigator.geolocation) {
         setLocationStatus("⚠️ GPS Not Supported");
         return;
     }
 
-    setLocationStatus("📡 Triangulating Position...");
+    setLocationStatus("📡 Locating...");
 
-    // Success Handler
-    const onSucc = (position) => {
-        setFormData(prev => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-        }));
-        setLocationStatus(`✅ GPS Locked (${position.coords.accuracy.toFixed(0)}m acc)`);
-    };
-
-    // Error Handler
-    const onErr = (error) => {
-        console.warn("GPS Warning:", error.message);
-        // Only show "Failed" if we haven't locked coordinates yet
-        setFormData(prev => {
-            if (!prev.latitude) {
-                setLocationStatus("⚠️ GPS Failed (Enter Manually)");
-            }
-            return prev;
-        });
-    };
-
-    // OPTION A: Try High Accuracy (GPS)
-    navigator.geolocation.getCurrentPosition(onSucc, (err) => {
-        console.log("High accuracy failed, trying low accuracy...");
-        
-        // OPTION B: Fallback to Low Accuracy (Wifi/Cell)
-        navigator.geolocation.getCurrentPosition(onSucc, onErr, {
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 0
-        });
-
-    }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
-
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            console.log("GPS Success:", position);
+            setFormData(prev => ({
+                ...prev,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            }));
+            setLocationStatus("✅ GPS Locked");
+        },
+        (error) => {
+            console.error("GPS Error:", error);
+            setLocationStatus("⚠️ GPS Failed (Enter Manually)");
+        },
+        { 
+            enableHighAccuracy: false, // 👈 KEY CHANGE: Don't force GPS, use WiFi/Cell
+            timeout: 10000, 
+            maximumAge: 60000 // Accept cached location from last 1 minute
+        }
+    );
   }, []);
 
   const handleFileChange = (e) => {
