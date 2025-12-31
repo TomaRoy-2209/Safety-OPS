@@ -16,12 +16,12 @@ export default function UnifiedReportPage() {
     description: '',
     type: 'Fire', // Default for Emergency
     category: 'Road', // Default for Maintenance
-    latitude: null,
-    longitude: null,
+    latitude: '', // Initialize as empty string for inputs
+    longitude: '',
     file: null
   });
 
-  // 1. AUTO-GET LOCATION ON LOAD
+  // 1. AUTO-GET LOCATION ON LOAD (With Timeout Fix)
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -36,8 +36,12 @@ export default function UnifiedReportPage() {
         (error) => {
           console.error("Location Error:", error);
           setLocationStatus("⚠️ GPS Failed (Enter Manually)");
-        }
+        },
+        // ⚡ FIX: Add Timeout (10 seconds) so it doesn't hang forever
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
+    } else {
+        setLocationStatus("⚠️ GPS Not Supported");
     }
   }, []);
 
@@ -50,24 +54,29 @@ export default function UnifiedReportPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     const token = localStorage.getItem('jwt');
+    if (!token) {
+        alert("Session expired. Please log in.");
+        router.push('/login');
+        return;
+    }
+
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
-    // 🚨 FIX: Robust FormData Construction
+    // 🚨 ROBUST FORM DATA CONSTRUCTION
     const data = new FormData();
     data.append('title', formData.title);
     data.append('description', formData.description);
-    
-    // Use nullish coalescing (??) to ensure 0 coordinates are sent as '0' not ''
-    data.append('latitude', formData.latitude ?? '');
-    data.append('longitude', formData.longitude ?? '');
+    data.append('latitude', formData.latitude);
+    data.append('longitude', formData.longitude);
 
-    // Append File with correct Backend Key
+    // Dynamic File Key Selection
     if (formData.file) {
         if (activeTab === 'emergency') {
-            data.append('evidence', formData.file); // Backend expects 'evidence' for incidents
+            data.append('evidence', formData.file); // IncidentController expects 'evidence'
         } else {
-            data.append('image', formData.file);    // Backend expects 'image' for maintenance
+            data.append('image', formData.file);    // MaintenanceController expects 'image'
         }
     }
 
@@ -84,11 +93,11 @@ export default function UnifiedReportPage() {
             data.append('category', formData.category);
         }
 
-        // 🚨 CRITICAL FIX: Removed manual 'Content-Type' header
-        // Axios automatically sets 'multipart/form-data' with the correct boundary for FormData
+        // Send Request
         await axios.post(url, data, {
             headers: { 
                 Authorization: `Bearer ${token}`
+                // Axios automatically handles Content-Type for FormData
             }
         });
 
@@ -111,7 +120,7 @@ export default function UnifiedReportPage() {
         {/* --- TAB SWITCHER --- */}
         <div className="flex bg-[#0a0a0a] p-1 rounded-xl mb-6 border border-gray-800">
             <button 
-                type="button" // Prevent accidental submit
+                type="button" 
                 onClick={() => setActiveTab('emergency')}
                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'emergency' 
@@ -122,7 +131,7 @@ export default function UnifiedReportPage() {
                 <span>🚨 EMERGENCY</span>
             </button>
             <button 
-                type="button" // Prevent accidental submit
+                type="button"
                 onClick={() => setActiveTab('maintenance')}
                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'maintenance' 
@@ -167,7 +176,7 @@ export default function UnifiedReportPage() {
                     />
                 </div>
 
-                {/* 2. CATEGORY SELECTOR (Changes based on Tab) */}
+                {/* 2. CATEGORY SELECTOR */}
                 <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
                         {activeTab === 'emergency' ? 'Incident Type' : 'Infrastructure Category'}
@@ -203,7 +212,35 @@ export default function UnifiedReportPage() {
                     </span>
                 </div>
 
-                {/* 4. FILE UPLOAD (Works for Both now!) */}
+                {/* 4. MANUAL LOCATION (Only if GPS fails or hangs) */}
+                {!locationStatus.includes("✅") && (
+                    <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Latitude</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g. 23.8103"
+                                className="w-full bg-[#111] border border-red-900/50 rounded-lg p-3 text-white"
+                                value={formData.latitude}
+                                onChange={e => setFormData({...formData, latitude: e.target.value})}
+                                required // Force them to enter if GPS failed
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Longitude</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g. 90.4125"
+                                className="w-full bg-[#111] border border-red-900/50 rounded-lg p-3 text-white"
+                                value={formData.longitude}
+                                onChange={e => setFormData({...formData, longitude: e.target.value})}
+                                required // Force them to enter if GPS failed
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* 5. FILE UPLOAD */}
                 <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Evidence / Photo</label>
                     <input 
@@ -214,7 +251,7 @@ export default function UnifiedReportPage() {
                     />
                 </div>
 
-                {/* 5. DESCRIPTION */}
+                {/* 6. DESCRIPTION */}
                 <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Details</label>
                     <textarea 
