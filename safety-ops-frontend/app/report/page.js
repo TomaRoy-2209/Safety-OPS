@@ -22,27 +22,50 @@ export default function UnifiedReportPage() {
   });
 
   // 1. AUTO-GET LOCATION ON LOAD (With Timeout Fix)
+  // 1. ROBUST LOCATION STRATEGY
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData(prev => ({
+    if (!("geolocation" in navigator)) {
+        setLocationStatus("⚠️ GPS Not Supported");
+        return;
+    }
+
+    setLocationStatus("📡 Triangulating Position...");
+
+    // Success Handler
+    const onSucc = (position) => {
+        setFormData(prev => ({
             ...prev,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
-          }));
-          setLocationStatus("✅ GPS Locked");
-        },
-        (error) => {
-          console.error("Location Error:", error);
-          setLocationStatus("⚠️ GPS Failed (Enter Manually)");
-        },
-        // ⚡ FIX: Add Timeout (10 seconds) so it doesn't hang forever
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-        setLocationStatus("⚠️ GPS Not Supported");
-    }
+        }));
+        setLocationStatus(`✅ GPS Locked (${position.coords.accuracy.toFixed(0)}m acc)`);
+    };
+
+    // Error Handler
+    const onErr = (error) => {
+        console.warn("GPS Warning:", error.message);
+        // Only show "Failed" if we haven't locked coordinates yet
+        setFormData(prev => {
+            if (!prev.latitude) {
+                setLocationStatus("⚠️ GPS Failed (Enter Manually)");
+            }
+            return prev;
+        });
+    };
+
+    // OPTION A: Try High Accuracy (GPS)
+    navigator.geolocation.getCurrentPosition(onSucc, (err) => {
+        console.log("High accuracy failed, trying low accuracy...");
+        
+        // OPTION B: Fallback to Low Accuracy (Wifi/Cell)
+        navigator.geolocation.getCurrentPosition(onSucc, onErr, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 0
+        });
+
+    }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+
   }, []);
 
   const handleFileChange = (e) => {
