@@ -160,4 +160,17 @@ class IncidentController extends Controller
                         ->get()
         ], 200);
     }
+    // 🗺️ HEATMAP DATA ENDPOINT (Coordinates Only)
+    public function heatmapData()
+    {
+        // 1. Fetch only location data
+        // We filter out rows where location is missing to prevent errors
+        $data = Incident::select('latitude', 'longitude', 'title') // 'title' is optional, but useful if you add tooltips later
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get();
+            
+        // 2. Return as JSON
+        return response()->json($data);
+    }
 }

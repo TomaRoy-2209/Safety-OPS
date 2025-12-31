@@ -34,13 +34,20 @@ export default function DashboardLayout({ children, title }) {
         return '/dashboard'; 
     };
 
+    // 🛠️ UPDATED NAVIGATION ITEMS
     const navItems = [
         { label: 'Overview', href: getHomeLink(), icon: '🏠', roles: ['citizen', 'responder', 'admin', 'worker'] },
+        
+        // ✅ ADDED: Safety Map (Accessible to EVERYONE)
+        { label: 'Safety Map', href: '/safety-map', icon: '🗺️', roles: ['citizen', 'responder', 'admin', 'worker'] },
+
         { label: 'New Report', href: '/report', icon: '🚨', roles: ['citizen', 'responder', 'admin'] },
         { label: 'Maintenance Log', href: '/admin/maintenance', icon: '📋', roles: ['admin', 'worker'] },
         { label: 'Dispatch Control', href: '/dispatch', icon: '🚓', roles: ['admin', 'responder'] },
         { label: 'Live Intel Feed', href: '/live-feed', icon: '📡', roles: ['admin', 'responder'] },
-        { label: 'Tactical Map', href: '/map', icon: '🗺️', roles: ['admin', 'responder', 'citizen', 'worker'] },
+        
+        // (Removed old 'Tactical Map' /map link to avoid confusion since we built /safety-map)
+        
         { label: 'Risk Assessment', href: '/admin/risk-assessment', icon: '📊', roles: ['admin', 'responder', 'citizen'] },
         { label: 'User Database', href: '/admin/users', icon: '👥', roles: ['admin'] },
         { label: 'Access Control', href: '/admin/access-control', icon: '🔑', roles: ['admin'] },
@@ -100,14 +107,19 @@ export default function DashboardLayout({ children, title }) {
                                     key={item.label} 
                                     href={item.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 group ${
                                         isActive 
                                         ? 'bg-blue-600 text-white shadow-md' 
                                         : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                     }`}
                                 >
-                                    <span className="text-lg">{item.icon}</span>
+                                    <span className="text-lg group-hover:scale-110 transition-transform">{item.icon}</span>
                                     <span>{item.label}</span>
+                                    
+                                    {/* Optional: Add a subtle 'Live' dot for the map */}
+                                    {item.label === 'Safety Map' && !isActive && (
+                                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    )}
                                 </Link>
                             );
                         }

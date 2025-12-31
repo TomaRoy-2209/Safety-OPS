@@ -83,12 +83,26 @@ export default function CitizenDashboard() {
             <p className="text-gray-400 mb-6 max-w-lg">
                 You have <span className="text-white font-bold">{myReports.length} active reports</span>. 
             </p>
-            <button 
-                onClick={() => router.push('/report')}
-                className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-red-900/20 transition-all flex items-center gap-2"
-            >
-                <span>+ REPORT NEW ISSUE</span>
-            </button>
+            
+            {/* ACTION BUTTONS ROW */}
+            <div className="flex flex-wrap gap-4">
+                {/* Report Button */}
+                <button 
+                    onClick={() => router.push('/report')}
+                    className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-red-900/20 transition-all flex items-center gap-2"
+                >
+                    <span>+ REPORT NEW ISSUE</span>
+                </button>
+
+                {/* ✅ SAFETY MAP BUTTON (NEW) */}
+                <button 
+                    onClick={() => router.push('/safety-map')}
+                    className="bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 border border-blue-800 px-6 py-3 rounded-lg font-bold transition-all flex items-center gap-2"
+                >
+                    <span className="text-xl">🗺️</span>
+                    <span>VIEW SAFETY MAP</span>
+                </button>
+            </div>
          </div>
       </div>
 
@@ -117,7 +131,7 @@ export default function CitizenDashboard() {
                                 <h3 className="font-bold text-white text-lg leading-tight">{report.title}</h3>
                             </div>
 
-                            {/* RIGHT: Badges (Moved to Corner) */}
+                            {/* RIGHT: Badges (Corner) */}
                             <div className="flex flex-col items-end gap-2 pl-4">
                                 {/* Type Badge */}
                                 <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider ${

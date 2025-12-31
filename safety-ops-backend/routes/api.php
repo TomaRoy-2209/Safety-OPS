@@ -20,6 +20,7 @@ Route::get('/incidents/all', [IncidentController::class, 'getAll']);
 
 // --- 2. PROTECTED ROUTES (Login Required) ---
 Route::middleware('auth:api')->group(function () {
+    Route::get('/incidents/heatmap', [App\Http\Controllers\API\IncidentController::class, 'heatmapData']);
 
     // --- Auth Management ---
     Route::prefix('auth')->group(function () {
