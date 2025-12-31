@@ -45,9 +45,7 @@ export default function DashboardLayout({ children, title }) {
         { label: 'Maintenance Log', href: '/admin/maintenance', icon: '📋', roles: ['admin', 'worker'] },
         { label: 'Dispatch Control', href: '/dispatch', icon: '🚓', roles: ['admin', 'responder'] },
         { label: 'Live Intel Feed', href: '/live-feed', icon: '📡', roles: ['admin', 'responder'] },
-        
-        // (Removed old 'Tactical Map' /map link to avoid confusion since we built /safety-map)
-        
+        { label: 'Tactical Map', href: '/map', icon: '🗺️', roles: ['admin', 'responder', 'citizen', 'worker'] },
         { label: 'Risk Assessment', href: '/admin/risk-assessment', icon: '📊', roles: ['admin', 'responder', 'citizen'] },
         { label: 'User Database', href: '/admin/users', icon: '👥', roles: ['admin'] },
         { label: 'Access Control', href: '/admin/access-control', icon: '🔑', roles: ['admin'] },
