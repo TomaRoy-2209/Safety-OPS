@@ -173,4 +173,17 @@ class IncidentController extends Controller
         // 2. Return as JSON
         return response()->json($data);
     }
+    public function nearby(Request $request)
+{
+    $lat = $request->latitude;
+    $long = $request->longitude;
+)
+    $range = 0.05;
+    $incidents = Incident::whereBetween('latitude', [$lat - $range, $lat + $range])
+                         ->whereBetween('longitude', [$long - $range, $long + $range])
+                         ->orderBy('created_at', 'desc')
+                         ->get();
+
+    return response()->json($incidents);
+}
 }
