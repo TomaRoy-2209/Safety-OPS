@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import axios from 'axios';
 import DashboardLayout from "../components/DashboardLayout"; 
 import LiveChat from "../components/LiveChat"; 
-import { requestForToken, onMessageListener } from '../../firebase'; 
+import { requestForToken, onMessageListener } from '../../firebase';
+import NearbyFeed from '../components/NearbyFeed';
 
 export default function CitizenDashboard() {
   const router = useRouter();
@@ -177,6 +178,9 @@ export default function CitizenDashboard() {
             </div>
         )}
       </div>
+    <div>
+        <NearbyFeed />
+    </div>
 
       {/* 3. LIVE CHAT MODAL */}
       {selectedIncident && (
