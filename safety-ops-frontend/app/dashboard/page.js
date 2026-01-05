@@ -106,6 +106,9 @@ export default function CitizenDashboard() {
             </div>
          </div>
       </div>
+      <div>
+        <NearbyFeed />
+      </div>
 
       {/* 2. REPORTS GRID */}
       <div className="space-y-4">
@@ -178,9 +181,6 @@ export default function CitizenDashboard() {
             </div>
         )}
       </div>
-    <div>
-        <NearbyFeed />
-    </div>
 
       {/* 3. LIVE CHAT MODAL */}
       {selectedIncident && (
