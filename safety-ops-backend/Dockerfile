@@ -24,6 +24,7 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # The command to start the server
 # Render automatically sets the $PORT variable
-# Move the Firebase key from the root folder to the storage folder at runtime
-RUN cp /var/www/html/firebase_credentials.json /var/www/html/storage/app/firebase_credentials.json || true
-CMD sh -c "php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+# The command to start the server
+# 1. Copies the Secret File Render provides at runtime into Laravel's storage
+# 2. Links storage, runs database migrations, and boots the server
+CMD sh -c "cp /etc/secrets/firebase_credentials.json /var/www/storage/app/firebase_credentials.json || echo 'No secret found' && php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
