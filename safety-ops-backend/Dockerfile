@@ -24,4 +24,6 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # The command to start the server
 # Render automatically sets the $PORT variable
+# Move the Firebase key from the root folder to the storage folder at runtime
+RUN cp /var/www/html/firebase_credentials.json /var/www/html/storage/app/firebase_credentials.json || true
 CMD sh -c "php artisan storage:link && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
