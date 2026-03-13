@@ -9,21 +9,18 @@ import { requestForToken } from '../../firebase';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
   
-  // Default stats
+  // FIX 1: Added <any> types so TypeScript stops throwing errors
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, resolved: 0 });
-  
-  const [recentIncidents, setRecentIncidents] = useState([]);
-  const [selectedIncident, setSelectedIncident] = useState(null); 
+  const [recentIncidents, setRecentIncidents] = useState<any[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<any>(null); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Get Token
     const token = localStorage.getItem("jwt");
     const role = localStorage.getItem("role");
 
-    // 2. Security Check
     if (!token || role !== "admin") {
       router.push("/login");
       return;
@@ -35,34 +32,29 @@ export default function AdminDashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             };
 
-            // 👇 FIX: Use Environment Variable
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1801';
 
-            // 3. Fetch Data (Profile + Incidents)
-            // Replaced http://localhost:1801 with API_URL
             const profileReq = await axios.get(`${API_URL}/api/auth/profile`, config);
             const incidentsReq = await axios.get(`${API_URL}/api/incidents`, config);
 
-            // Process User
             setUser(profileReq.data.user || profileReq.data);
 
-            // Robust Data Handling
             const raw = incidentsReq.data;
             const allIncidents = Array.isArray(raw) ? raw : (raw.data || []);
 
-            // 4. Calculate Stats
+            // FIX 2: Added (i: any) to quiet down the array filter errors
             setStats({
                 total: allIncidents.length,
-                pending: allIncidents.filter(i => i.status === 'pending').length,
-                active: allIncidents.filter(i => i.status === 'dispatched').length,
-                resolved: allIncidents.filter(i => i.status === 'resolved').length,
+                pending: allIncidents.filter((i: any) => i.status === 'pending').length,
+                active: allIncidents.filter((i: any) => i.status === 'dispatched').length,
+                resolved: allIncidents.filter((i: any) => i.status === 'resolved').length,
             });
 
-            // 5. Update Recent Activity List
             setRecentIncidents(allIncidents.slice(0, 4));
             setLoading(false);
 
-        } catch (error) {
+        // FIX 3: Explicitly type the error as 'any' to allow error.response
+        } catch (error: any) {
             console.error("Dashboard Load Error:", error);
             if (error.response && error.response.status === 401) {
                 localStorage.clear();
@@ -97,7 +89,6 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout title="COMMAND OVERVIEW">
       
-      {/* IntelViewer Pop-up */}
       {selectedIncident && (
         <IntelViewer 
             incident={selectedIncident} 
@@ -107,7 +98,6 @@ export default function AdminDashboard() {
 
       <div className="space-y-8">
         
-        {/* STATS ROW (Grid handles mobile automatically) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-[#0a0a0a] border border-gray-800 p-4 rounded-xl flex flex-col items-center justify-center shadow-lg">
                 <span className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Total Signals</span>
@@ -127,10 +117,8 @@ export default function AdminDashboard() {
             </div>
         </div>
 
-        {/* WELCOME & RECENT ACTIVITY */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            {/* Left: Welcome Panel */}
             <div className="lg:col-span-2 bg-[#0a0a0a]/80 backdrop-blur-md border border-gray-800 rounded-xl p-6 md:p-8 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
                     <svg className="w-40 h-40 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
@@ -141,7 +129,6 @@ export default function AdminDashboard() {
                     System integrity is optimal. You have <span className="text-white font-bold">{stats.pending} pending incidents</span> requiring immediate review and dispatch assignment.
                 </p>
                 
-                {/* 📱 MOBILE FIX: Flex-col on small screens, Row on large */}
                 <div className="flex flex-col sm:flex-row gap-4 relative z-10">
                       <button onClick={() => router.push('/dispatch')} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 md:py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
                         <span>GO TO DISPATCH</span>
@@ -152,15 +139,13 @@ export default function AdminDashboard() {
                         VIEW LIVE MAP
                       </button>
                       
-                      <Link href="/admin/disaster" className="w-full sm:w-auto">
-                        <button className="w-full sm:w-auto bg-red-900/30 hover:bg-red-600 border border-red-800 text-red-200 px-6 py-3 md:py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)] flex items-center justify-center gap-2">
-                            <span>⚠️ EMERGENCY</span>
-                        </button>
+                      {/* FIX 4: Removed the nested <button> and moved styling directly to the <Link> */}
+                      <Link href="/admin/disaster" className="w-full sm:w-auto bg-red-900/30 hover:bg-red-600 border border-red-800 text-red-200 px-6 py-3 md:py-2 rounded-lg font-bold text-sm transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)] flex items-center justify-center gap-2">
+                          <span>⚠️ EMERGENCY</span>
                       </Link>
                 </div>
             </div>
 
-            {/* Right: Recent Alerts Feed */}
             <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-gray-800 rounded-xl p-6 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Recent Activity</h3>
@@ -171,7 +156,7 @@ export default function AdminDashboard() {
                     {recentIncidents.length === 0 ? (
                         <p className="text-gray-600 text-sm text-center py-4">No recent activity.</p>
                     ) : (
-                        recentIncidents.map(incident => (
+                        recentIncidents.map((incident: any) => (
                             <div 
                                 key={incident.id} 
                                 onClick={() => setSelectedIncident(incident)}
