@@ -38,7 +38,7 @@ export const requestForToken = async () => {
 
     // 3. Get Token using the specific registration
     const currentToken = await getToken(messaging, { 
-        vapidKey: 'BAwhE--DmT7nG5HGWIG_q95GM8d9OOWSBiU8H-nJqjsnZvD1F3A51NNH5uNrDbCFkL4srorB0r-Y1-EmAp6rWtg',
+        vapidKey: 'BEZD9c0IULSnAU8vEb84xGFPSf7XU8RVioo-ovgSc2xaDRBMw9ae-9QzA9RD0lC1BbrGEwccN_An9rDWhkGQB2A',
         serviceWorkerRegistration: registration 
     });
 
