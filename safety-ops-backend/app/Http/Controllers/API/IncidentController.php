@@ -177,7 +177,6 @@ class IncidentController extends Controller
 {
     $lat = $request->latitude;
     $long = $request->longitude;
-)
     $range = 0.05;
     $incidents = Incident::whereBetween('latitude', [$lat - $range, $lat + $range])
                          ->whereBetween('longitude', [$long - $range, $long + $range])
