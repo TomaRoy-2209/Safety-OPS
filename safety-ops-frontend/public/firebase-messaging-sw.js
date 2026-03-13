@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyASNH9Z9Ux9-02rjvOzfR9liAKK0mJYrCI",
-  authDomain: "safety-ops.firebaseapp.com",
-  projectId: "safety-ops",
-  storageBucket: "safety-ops.firebasestorage.app",
-  messagingSenderId: "691293895604",
-  appId: "1:691293895604:web:7677854e6a6f405d9a90e1"
+  apiKey: "AIzaSyBFG9hhk3irpyamx9kHp4PKhRFM1AYWD-o",
+  authDomain: "safety-ops-16380.firebaseapp.com",
+  projectId: "safety-ops-16380",
+  storageBucket: "safety-ops-16380.firebasestorage.app",
+  messagingSenderId: "159389224370",
+  appId: "1:159389224370:web:995710d756d8f5c32b68ab"
 };
 
 // Initialize Firebase inside the Service Worker
